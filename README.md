@@ -1,11 +1,8 @@
 # CIFAR-10 Airbench 💨
 
-This repo contains utilities and baselines for fast neural network training on CIFAR-10.
-
-
 ## How to run
 
-To perfom a fast training targeting 94% accuracy, run either
+To perfom a fast training with 94% average accuracy on CIFAR-10, run either
 
 ```
 git clone https://github.com/KellerJordan/cifar10-airbench.git && cd airbench && python airbench94.py
