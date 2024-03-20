@@ -3,58 +3,51 @@
 # This script is designed to reach 94% accuracy on the CIFAR-10 test-set in the shortest possible time
 # after first seeing the training set. It runs in 3.29 seconds on a single NVIDIA A100.
 #
-# We use the following methods:
+# It contains the following methods:
 #
-# 1. Our network architecture is an 8-layer convnet with whitening and identity initialization.
+# 1. The network architecture is an 8-layer convnet with whitening and identity initialization.
 #    * Following Page (2018), the first convolution is initialized as a frozen patch-whitening layer
 #      using statistics from the training images. Additionally, the logit output is downscaled and
 #      BatchNorm affine weights are disabled.
 #    * Following hlb-CIFAR10, the whitening layer has patch size 2, precedes an activation, and is
 #      concatenated with its negation to ensure completeness. The six remaining convolutional layers
 #      lack residual connections and are initialized as identity transforms wherever possible. The
-#      8-layer architecture is also following hlb-CIFAR10. We use reduced width in the final layer.
+#      8-layer architecture is also following hlb-CIFAR10, with reduced width in the final layer.
 #    * We add a learnable bias to the whitening layer, which reduces the number of steps to 94% by
-#      5-10%. We find it converges quickly, so we save time by freezing it after 3 epochs.
-# 2. For test-time augmentation we use standard horizontal flipping. We also use one-pixel translation
-#    to the upper-left and lower-right, for a total of six forward passes per example.
-# 3. For training data augmentation we use horizontal flipping and random two-pixel translation. For
-#    horizontal flipping we follow a novel scheme. At epoch one images are randomly flipped as usual.
-#    At epoch two we flip exactly those images which weren't flipped in the first epoch. Then epoch
-#    three flips the same images as epoch one, four the same as two, and so on. We find that this
-#    decreases the number of steps to 94% accuracy by roughly 10%. We hypothesize that this is because
-#    the standard fully random flipping is wasteful in the sense that (e.g.,) 1/8 of images will be
-#    flipped the same way for the first four epochs, effectively resulting in less new images seen
-#    per epoch as compared to our semi-deterministic alternating scheme.
-# 4. Following Page (2018), we use Nesterov SGD with a triangular learning rate schedule and increased
-#    learning rate for BatchNorm biases. On top of this, following hlb-CIFAR10, we use a lookahead-
-#    like scheme with slow decay rate at the end of training, which saves an extra 0.35 seconds.
-# 5. Following hlb-CIFAR10, we use a low momentum of 0.6 for running BatchNorm stats, which we find
-#    yields more accurate estimates for very short trainings than the standard setting of 0.9.
-# 6. We use GPU-accelerated dataloading and augmentation. A generic fast CIFAR-10 dataloader can be
-#    found at https://github.com/KellerJordan/cifar10-loader.
-# 7. We use torch.compile with mode='max-autotune'.
+#      5-10%. It converges quickly so we save time by freezing it after 3 epochs.
+# 2. The training data augmentation is horizontal flipping and random two-pixel translation. The
+#    horizontal flipping uses novel method. At epoch one images are randomly flipped as usual.
+#    At epoch two we flip exactly those images which weren't flipped in the first epoch. Epoch three
+#    flips the same images as epoch one, four the same as two, and so on. This decreases the number
+#    of steps to 94% accuracy by around 10% compared to standard random flipping.
+# 3. Test images are augmented with horizontal flipping, and one-pixel translation to the upper-
+#    left and lower-right, for a total of six forward passes per test image.
+# 4. Following Page (2018) we use Nesterov SGD with a triangular learning rate schedule and increased
+#    learning rate for BatchNorm biases. And following hlb-CIFAR10 we use a lookahead-like scheme with
+#    slow decay rate at the end of training.
+# 5. We use GPU-accelerated dataloading and augmentation.
+# 6. We use torch.compile with mode='max-autotune'.
 #
-# To confirm that the mean accuracy is above 94%, we ran a test of n=700 runs, which yielded an
-# average accuracy of 94.02% (p<0.0001 for the true mean being below 94%, via t-test).
+# To confirm that the mean accuracy is above 94%, we ran a test of n=1000 runs, which yielded an
+# average accuracy of 94.01% (p<0.0001 for the true mean being below 94%, via t-test).
 #
-# We recorded the runtime of 3.29 seconds on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
+# The runtime of 3.29 seconds was recorded on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
 # NVIDIA-SMI 525.147.05   Driver Version: 525.147.05   CUDA Version: 12.0
 # torch.__version__ == '2.2.1'
 #
-# Note that the first time this script is run, compilation takes up to two minutes. For a script with
-# (much) less warmup time see airbench94.py.
+# Note that the first time this script is run, compilation takes several minutes. See airbench94.py for
+# a script with much less warmup time.
+#
+# This script is descended from hlb-CIFAR10 [1], which is descended from [2]. The latter was the winning
+# submission to the Stanford DAWNbench competition for CIFAR-10 in 2018, with a time of 26 seconds to
+# 94% accuracy on an NVIDIA V100.
+#
+# Version 0.7.0 of hlb-CIFAR10 [1] uses 587 TFLOPs and runs in 6.2 seconds. The final training script
+# from David Page's series "How to Train Your ResNet" [2] uses 1,148 TFLOPs and runs in 14.9 seconds
+# on an A100. And a standard 200-epoch ResNet18 training uses ~30,000 TFLOPs and runs in minutes.
 #
 # This script trains an 8-layer convnet with 2M parameters and 0.28 GFLOPs per forward pass. The entire
-# training run uses 358 TFLOPs, which could theoretically take 1.15 A100-seconds at perfect utilization.
-#
-# For comparison, version 0.7.0 of https://github.com/tysam-code/hlb-CIFAR10 uses 587 TFLOPs and runs in
-# 6.2 seconds. The final training script from David Page's series "How to Train Your ResNet" (Page 2018)
-# uses 1,148 TFLOPs and runs in 14.9 seconds (on an A100). And the standard 200-epoch ResNet18 training
-# on CIFAR-10 uses ~30,000 TFLOPs and runs in minutes.
-#
-# This script is descended from https://github.com/tysam-code/hlb-CIFAR10 [1], which itself is descended
-# from David Page's training script [2]. The latter was the winning submission to the Stanford DAWNbench
-# competition for CIFAR-10 in 2018, with a time of 26 seconds to 94% accuracy on an NVIDIA V100.
+# training run uses 358 TFLOPs, which could theoretically take 1.15 A100-seconds at perfect GPU utilization.
 #
 # 1. tysam-code. "CIFAR-10 hyperlightspeedbench." https://github.com/tysam-code/hlb-CIFAR10. Jan 01 (2024).
 # 2. Page, David. "How to train your resnet." Myrtle, https://myrtle.ai/learn/how-to-train-your-resnet-8-bag-of-tricks/. Sept 24 (2018).

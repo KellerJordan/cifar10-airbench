@@ -1,6 +1,6 @@
 # Uncompiled variant of airbench94_compiled.py
 # 3.83s runtime on an A100; 0.36 PFLOPs.
-# Evidence: 94.02 average accuracy in n=700 runs.
+# Evidence: 94.01 average accuracy in n=1000 runs.
 #
 # We recorded the runtime of 3.83 seconds on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
 # NVIDIA-SMI 515.105.01   Driver Version: 515.105.01   CUDA Version: 11.7
