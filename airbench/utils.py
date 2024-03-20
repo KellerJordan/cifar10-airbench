@@ -33,9 +33,9 @@ def infer(model, loader, tta_level=0):
         logits_translate = torch.stack(logits_translate_list).mean(0)
         return 0.5 * logits + 0.5 * logits_translate
 
+    infer_fn = [infer_basic, infer_mirror, infer_mirror_translate][tta_level]
     with torch.no_grad():
-        infer_fn = [infer_basic, infer_mirror, infer_mirror_translate][tta_level]
-    return torch.cat([infer_fn(inputs, model) for inputs in test_images.split(2000)])
+        return torch.cat([infer_fn(inputs, model) for inputs in test_images.split(2000)])
 
 def evaluate(model, loader, tta_level=1):
     logits = infer(model, loader, tta_level)
