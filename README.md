@@ -43,8 +43,8 @@ Note that the first run of training is always slower due to GPU warmup.
 For writing custom fast CIFAR-10 training scripts, you may find GPU-accelerated dataloading useful:
 ```
 import airbench
-train_loader = airbench.CifarLoader('cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
-test_loader = airbench.CifarLoader('cifar10', train=False, batch_size=1000)
+train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
+test_loader = airbench.CifarLoader('/tmp/cifar10', train=False, batch_size=1000)
 
 for epoch in range(200):
     for inputs, labels in train_loader:
@@ -56,7 +56,7 @@ for epoch in range(200):
 If you wish to modify the data used for training, it can be done like so:
 ```
 import airbench
-train_loader = airbench.CifarLoader('cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
+train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
 mask = (train_loader.labels < 6)
 train_loader.images = train_loader.images[mask]
 train_loader.labels = train_loader.labels[mask]
