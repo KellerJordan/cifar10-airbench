@@ -1,16 +1,6 @@
-# A variant of airbench optimized for time-to-96%.
-# 49s runtime on an A100; 7.46 PFLOPs.
-# Evidence: 96.05 average accuracy in n=200 runs.
-# If random flip is used instead of alternating, then decays to 96.01 average accuracy in n=200 runs.
-#
-# Changes relative to airbench:
-# - Doubled width and reduced learning rate.
-# - Added extra layer to each ConvBlock. The network now contains 10 conv layers.
-# - Added residual connections over the last two conv layers in each ConvBlock.
-# - Added 12-pixel cutout data augmentation and increased random-translation strength from 2 to 4 pixels.
-# - Increased training duration to 40 epochs.
+# 96.05 in n=200 runs.
 
-from .utils import train, evaluate, CifarLoader
+from .utils import train, CifarLoader
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -51,11 +41,12 @@ hyp = {
         'cutout': 12,
     },
     'net': {
-        'whitening': {
-            'kernel_size': 2,
-        },
         'batchnorm_momentum': 0.6,
-        'base_width': 64,
+        'widths': {
+            'block1': 128,
+            'block2': 512,
+            'block3': 512,
+        },
         'scaling_factor': 1/9,
         'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
     },
@@ -77,7 +68,7 @@ class Mul(nn.Module):
         return x * self.scale
 
 class BatchNorm(nn.BatchNorm2d):
-    def __init__(self, num_features, eps=1e-12, momentum=hyp['net']['batchnorm_momentum'],
+    def __init__(self, num_features, momentum, eps=1e-12,
                  weight=False, bias=True):
         super().__init__(num_features, eps=eps, momentum=1-momentum)
         self.weight.requires_grad = weight
@@ -97,15 +88,13 @@ class Conv(nn.Conv2d):
         torch.nn.init.dirac_(w[:w.size(1)])
 
 class ConvGroup(nn.Module):
-    def __init__(self, channels_in, channels_out):
+    def __init__(self, channels_in, channels_out, batchnorm_momentum):
         super().__init__()
         self.conv1 = Conv(channels_in,  channels_out)
         self.pool = nn.MaxPool2d(2)
-        self.norm1 = BatchNorm(channels_out)
+        self.norm1 = BatchNorm(channels_out, batchnorm_momentum)
         self.conv2 = Conv(channels_out, channels_out)
-        self.norm2 = BatchNorm(channels_out)
-        self.conv3 = Conv(channels_out, channels_out)
-        self.norm3 = BatchNorm(channels_out)
+        self.norm2 = BatchNorm(channels_out, batchnorm_momentum)
         self.activ = nn.GELU()
 
     def forward(self, x):
@@ -127,19 +116,15 @@ class ConvGroup(nn.Module):
 #            Network Definition             #
 #############################################
 
-def make_net96():
-    widths = {
-        'block1': (2 * hyp['net']['base_width']), # 128 w/ width at base value
-        'block2': (8 * hyp['net']['base_width']), # 512 w/ width at base value
-        'block3': (8 * hyp['net']['base_width']), # 512 w/ width at base value
-    }
-    whiten_conv_width = 2 * 3 * hyp['net']['whitening']['kernel_size']**2
+def make_net96(widths=hyp['net']['widths'], batchnorm_momentum=hyp['net']['batchnorm_momentum']):
+    whiten_kernel_size = 2
+    whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
-        Conv(3, whiten_conv_width, kernel_size=hyp['net']['whitening']['kernel_size'], padding=0, bias=True),
+        Conv(3, whiten_width, 2, padding=0, bias=True),
         nn.GELU(),
-        ConvGroup(whiten_conv_width, widths['block1']),
-        ConvGroup(widths['block1'],  widths['block2']),
-        ConvGroup(widths['block2'],  widths['block3']),
+        ConvGroup(whiten_width,     widths['block1'], batchnorm_momentum),
+        ConvGroup(widths['block1'], widths['block2'], batchnorm_momentum),
+        ConvGroup(widths['block2'], widths['block3'], batchnorm_momentum),
         nn.MaxPool2d(3),
         Flatten(),
         nn.Linear(widths['block3'], 10, bias=False),
