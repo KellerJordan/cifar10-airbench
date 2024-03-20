@@ -1,0 +1,5 @@
+cifar10/
+dist/
+*.egg-info/
+*__pycache__/
+
