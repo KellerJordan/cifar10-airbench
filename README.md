@@ -2,10 +2,10 @@
 
 ## How to run
 
-To perfom a fast training with 94% average accuracy on CIFAR-10, run either
+To perfom a fast training to 94% average accuracy on CIFAR-10, run either
 
 ```
-git clone https://github.com/KellerJordan/cifar10-airbench.git && cd airbench && python airbench94.py
+git clone https://github.com/KellerJordan/cifar10-airbench.git && python airbench/airbench94.py
 ```
 
 or
@@ -21,7 +21,7 @@ CIFAR-10 is among the most widely used datasets in machine learning, facilitatin
 However, many studies use poorly optimized trainings, leading to wasted time and sometimes contradictory results.
 To resolve this problem, airbench contains a set of training methods which are both (a) very easily runnable and (b) state-of-the-art in terms of training speed.
 
-In particular, airbench contains training scripts which achieve 94%, 95%, and 96% accuracy on the CIFAR-10 test-set in state-of-the-art time.
+In particular, airbench training scripts attain 94%, 95%, and 96% accuracy on the CIFAR-10 test-set in 3.29, 10.4, and 46.3 seconds on an NVIDIA A100.
 These methods can replace baselines like training ResNet-20 or ResNet-18.
 
 
