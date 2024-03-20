@@ -157,7 +157,7 @@ def make_net96():
 #             Train and Eval               #
 ############################################
 
-def train96(train_loader=CifarLoader('cifar10', train=True, batch_size=hyp['opt']['batch_size'], aug=hyp['aug']),
+def train96(train_loader=CifarLoader('cifar10', train=True, batch_size=hyp['opt']['batch_size'], aug=hyp['aug'], altflip=True),
             epochs=hyp['opt']['train_epochs'], label_smoothing=hyp['opt']['label_smoothing'],
             learning_rate=hyp['opt']['lr'], bias_scaler=hyp['opt']['bias_scaler'],
             momentum=hyp['opt']['momentum'], weight_decay=hyp['opt']['weight_decay'],

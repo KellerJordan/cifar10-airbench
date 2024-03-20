@@ -97,7 +97,7 @@ def batch_cutout(inputs, size):
 
 class CifarLoader:
 
-    def __init__(self, path, train=True, batch_size=500, aug=None, drop_last=None, shuffle=None, detflip=True, gpu=0):
+    def __init__(self, path, train=True, batch_size=500, aug=None, drop_last=None, shuffle=None, altflip=False, gpu=0):
 
         data_path = os.path.join(path, 'train.pt' if train else 'test.pt')
         if not os.path.exists(data_path):
@@ -122,7 +122,7 @@ class CifarLoader:
         self.batch_size = batch_size
         self.drop_last = train if drop_last is None else drop_last
         self.shuffle = train if shuffle is None else shuffle
-        self.detflip = detflip
+        self.altflip = altflip
 
     def __len__(self):
         return len(self.images)//self.batch_size if self.drop_last else ceil(len(self.images)/self.batch_size)
@@ -152,7 +152,7 @@ class CifarLoader:
             images = self.proc_images['norm']
         # Flip all images together every other epoch. This increases diversity relative to random flipping
         if self.aug.get('flip', False):
-            if self.detflip:
+            if self.altflip:
                 if self.epoch % 2 == 1:
                     images = images.flip(-1)
             else:
