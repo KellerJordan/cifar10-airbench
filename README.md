@@ -2,7 +2,7 @@
 
 ## How to run
 
-To perfom a fast training to 94% average accuracy on CIFAR-10, run either
+To perform a fast training to 94% average accuracy on CIFAR-10, run either
 
 ```
 git clone https://github.com/KellerJordan/cifar10-airbench.git && python airbench/airbench94.py
