@@ -8,13 +8,15 @@ Fast training baselines for CIFAR-10.
 To train a neural network with 94% accuracy, please run either
 
 ```
-git clone https://github.com/KellerJordan/cifar10-airbench.git && python airbench/airbench94.py
+git clone https://github.com/KellerJordan/cifar10-airbench.git
+python airbench/airbench94.py
 ```
 
 or
 
 ```
-pip install airbench && python -c "import airbench; airbench.train94()"
+pip install airbench
+python -c "import airbench; airbench.train94()"
 ```
 
 
