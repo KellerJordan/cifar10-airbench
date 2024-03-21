@@ -243,7 +243,10 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
 
     train_loader.epoch = 0
 
-    if run == 'warmup' and verbose:
+    is_warmup = run in (-1, 'warmup')
+    if is_warmup and verbose:
+        run = 'warmup'
+        epochs = 0.2
         print_columns(logging_columns_list, is_head=True, print_cols=False)
     if run == 0 and verbose:
         print_columns(logging_columns_list, is_head=True)
@@ -313,9 +316,6 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
         model.train()
         for inputs, labels in train_loader:
 
-            if run == 'warmup':
-                labels = torch.zeros_like(labels)
-
             outputs = model(inputs)
             loss = loss_fn(outputs, labels).sum()
             optimizer.zero_grad(set_to_none=True)
@@ -337,6 +337,11 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
             if current_steps >= total_train_steps:
                 break
 
+            if verbose and is_warmup:
+                epoch = None
+                print_training_details(locals(), is_final_entry=False)
+                return
+
         if lookahead_state is not None:
             # Copy back parameters a final time after each epoch
             lookahead_state.update(model, decay=1.0)
@@ -356,7 +361,6 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
             train_loss = loss.item() / batch_size
 
             val_acc = evaluate(model, test_loader, tta_level=0)
-            tta_val_acc = None
 
             print_training_details(locals(), is_final_entry=False)
             run = None # Only print the run number once
