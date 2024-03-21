@@ -38,7 +38,7 @@ These trainings are provided as easily runnable dependency-free PyTorch scripts,
 | `airbench96.py` | 96.05% | 46.3s | 7.5 |
 
 Timings are on a single NVIDIA A100 GPU.
-Note that the first run of training is always slower due to GPU warmup.
+Note that the first run of training is slower due to GPU warmup.
 
 
 ## Using the GPU-accelerated dataloader independently
