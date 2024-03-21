@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-This repo contains fast training baselines for CIFAR-10.
+Fast training baselines for CIFAR-10.
 
 
 ## How to run
