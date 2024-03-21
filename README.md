@@ -18,11 +18,9 @@ pip install airbench && python -c "import airbench; airbench.train94()"
 ## Motivation
 
 CIFAR-10 is among the most widely used datasets in machine learning, facilitating thousands of research projects per year. 
-However, many studies use poorly optimized trainings, leading to wasted time and sometimes contradictory results.
-To resolve this problem, airbench contains a set of training methods which are both (a) very easily runnable and (b) state-of-the-art in terms of training speed.
-
-In particular, airbench training scripts attain 94%, 95%, and 96% accuracy on the CIFAR-10 test-set in 3.29, 10.4, and 46.3 seconds on an NVIDIA A100.
-These methods can replace baselines like training ResNet-20 or ResNet-18.
+The goal of this repo is to provide researchers with fast and stable training baselines, in order to accelerate small-scale neural network research.
+This repo contains three training baselines for CIFAR-10 which reach 94%, 95%, and 96% accuracy in state-of-the-art time.
+These trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
 
 
 ## Training methods
@@ -34,7 +32,7 @@ These methods can replace baselines like training ResNet-20 or ResNet-18.
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
 | `airbench96.py` | 96.05% | 46.3s | 7.5 |
 
-Timings are on a single NVIDIA A100.
+Timings are on a single NVIDIA A100 GPU.
 Note that the first run of training is always slower due to GPU warmup.
 
 
@@ -61,5 +59,35 @@ mask = (train_loader.labels < 6)
 train_loader.images = train_loader.images[mask]
 train_loader.labels = train_loader.labels[mask]
 print(len(train_loader)) # The loader now contains 30,000 images and has batch size 500, so this prints 60.
+```
+
+## Example data-selection experiment
+
+Airbench can be used as a platform for experiments in data selection and active learning.
+The following is an example experiment which demonstrates that it's better to select low-confidence examples than random examples.
+
+```
+import torch
+from airbench import train94, infer, evaluate, CifarLoader
+
+net = train94(label_smoothing=0) # train this network without label smoothing to get a better confidence signal
+
+loader = CifarLoader('cifar10', train=True, batch_size=1000)
+logits = infer(net, loader)
+conf = logits.log_softmax(1).amax(1) # confidence
+
+train_loader = CifarLoader('cifar10', train=True, batch_size=1024, aug=dict(flip=True, translate=2))
+mask = (torch.rand(len(train_loader.labels)) < 0.6)
+print('Training on %d images selected randomly' % mask.sum())
+train_loader.images = train_loader.images[mask]
+train_loader.labels = train_loader.labels[mask]
+train94(train_loader, epochs=16) # yields around 93% accuracy
+
+train_loader = CifarLoader('cifar10', train=True, batch_size=1024, aug=dict(flip=True, translate=2))
+mask = (conf < conf.float().quantile(0.6))
+print('Training on %d images selected based on minimum confidence' % mask.sum())
+train_loader.images = train_loader.images[mask]
+train_loader.labels = train_loader.labels[mask]
+train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence sampling is better than random.
 ```
 
