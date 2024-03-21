@@ -207,16 +207,17 @@ class LookaheadState:
 #                 Logging                  #
 ############################################
 
-def print_columns(columns_list, is_head=False, is_final_entry=False):
+def print_columns(columns_list, is_head=False, is_final_entry=False, print_cols=True):
     print_string = ''
     for col in columns_list:
         print_string += '|  %s  ' % col
     print_string += '|'
     if is_head:
         print('-'*len(print_string))
-    print(print_string)
-    if is_head or is_final_entry:
-        print('-'*len(print_string))
+    if print_cols:
+        print(print_string)
+        if is_head or is_final_entry:
+            print('-'*len(print_string))
 
 logging_columns_list = ['run   ', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'tta_val_acc', 'total_time_seconds']
 def print_training_details(variables, is_final_entry):
@@ -242,6 +243,8 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
 
     train_loader.epoch = 0
 
+    if run == 'warmup' and verbose:
+        print_columns(logging_columns_list, is_head=True, print_cols=False)
     if run == 0 and verbose:
         print_columns(logging_columns_list, is_head=True)
 
@@ -309,6 +312,9 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
 
         model.train()
         for inputs, labels in train_loader:
+
+            if run == 'warmup':
+                labels = torch.zeros_like(labels)
 
             outputs = model(inputs)
             loss = loss_fn(outputs, labels).sum()
