@@ -41,12 +41,12 @@ hyp = {
         'cutout': 12,
     },
     'net': {
-        'batchnorm_momentum': 0.6,
         'widths': {
             'block1': 128,
             'block2': 512,
             'block3': 512,
         },
+        'batchnorm_momentum': 0.6,
         'scaling_factor': 1/9,
         'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
     },

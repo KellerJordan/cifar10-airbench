@@ -40,12 +40,12 @@ hyp = {
         'translate': 2,
     },
     'net': {
-        'batchnorm_momentum': 0.6,
         'widths': {
             'block1': 64,
             'block2': 256,
             'block3': 256,
         },
+        'batchnorm_momentum': 0.6,
         'scaling_factor': 1/9,
         'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
     },
