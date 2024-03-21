@@ -68,9 +68,9 @@ hyp = {
     },
     'net': {
         'widths': {
-            'block1': 64,
-            'block2': 256,
-            'block3': 256,
+            'block1': 128,
+            'block2': 512,
+            'block3': 512,
         },
         'batchnorm_momentum': 0.6,
         'scaling_factor': 1/9,
