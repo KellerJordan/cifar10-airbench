@@ -64,7 +64,8 @@ print(len(train_loader)) # The loader now contains 30,000 images and has batch s
 ## Example data-selection experiment
 
 Airbench can be used as a platform for experiments in data selection and active learning.
-The following is an example experiment which demonstrates that it's better to select low-confidence examples than random examples.
+The following is an example experiment which demonstrates the classic result that low-confidence examples provide more training signal than random examples.
+It runs in <20 seconds on an A100.
 
 ```
 import torch
