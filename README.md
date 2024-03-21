@@ -60,7 +60,7 @@ If you wish to modify the data used for training, it can be done like so:
 ```
 import airbench
 train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
-mask = (train_loader.labels < 6)
+mask = (train_loader.labels < 6) # (this is just an example, the mask can be anything)
 train_loader.images = train_loader.images[mask]
 train_loader.labels = train_loader.labels[mask]
 print(len(train_loader)) # The loader now contains 30,000 images and has batch size 500, so this prints 60.
