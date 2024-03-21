@@ -472,7 +472,6 @@ def main(run):
                 acc_list.append((outputs.argmax(1) == labels).float().mean())
             val_acc = torch.stack(acc_list).mean().item()
             val_loss = torch.stack(loss_list).mean().item()
-        tta_val_acc = None
 
         print_training_details(locals(), is_final_entry=False)
         run = None # Only print the run number once
