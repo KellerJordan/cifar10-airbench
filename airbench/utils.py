@@ -246,7 +246,6 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
     is_warmup = run in (-1, 'warmup')
     if is_warmup and verbose:
         run = 'warmup'
-        epochs = 0.2
         print_columns(logging_columns_list, is_head=True, print_cols=False)
     if run == 0 and verbose:
         print_columns(logging_columns_list, is_head=True)
