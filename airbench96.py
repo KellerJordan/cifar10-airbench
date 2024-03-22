@@ -368,8 +368,7 @@ def main(run):
 
     loss_fn = nn.CrossEntropyLoss(label_smoothing=hyp['opt']['label_smoothing'], reduction='none')
 
-    train_augs = dict(flip=hyp['aug']['flip'], translate=hyp['aug']['translate'], cutout=hyp['aug']['cutout'])
-    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=train_augs)
+    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'])
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     if run == 'warmup':
         # The only purpose of the first run is to warmup, so we can use dummy data
