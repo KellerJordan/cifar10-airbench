@@ -230,7 +230,7 @@ def make_net(widths=hyp['net']['widths'], batchnorm_momentum=hyp['net']['batchno
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
-        Conv(3, whiten_width, 2, padding=0, bias=True),
+        Conv(3, whiten_width, whiten_kernel_size, padding=0, bias=True),
         nn.GELU(),
         ConvGroup(whiten_width,     widths['block1'], batchnorm_momentum),
         ConvGroup(widths['block1'], widths['block2'], batchnorm_momentum),
