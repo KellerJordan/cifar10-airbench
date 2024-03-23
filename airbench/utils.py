@@ -37,7 +37,7 @@ def infer(model, loader, tta_level=0):
     with torch.no_grad():
         return torch.cat([infer_fn(inputs, model) for inputs in test_images.split(2000)])
 
-def evaluate(model, loader, tta_level=1):
+def evaluate(model, loader, tta_level=0):
     logits = infer(model, loader, tta_level)
     return (logits.argmax(1) == loader.labels).float().mean().item()
 
