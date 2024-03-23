@@ -343,7 +343,7 @@ def print_columns(columns_list, is_head=False, is_final_entry=False):
     if is_head or is_final_entry:
         print('-'*len(print_string))
 
-logging_columns_list = ['run   ', 'epoch', 'train_loss', 'val_loss', 'train_acc', 'val_acc', 'tta_val_acc', 'total_time_seconds']
+logging_columns_list = ['run   ', 'epoch', 'train_loss', 'train_acc', 'val_acc', 'tta_val_acc', 'total_time_seconds']
 def print_training_details(variables, is_final_entry):
     formatted = []
     for col in logging_columns_list:
@@ -359,7 +359,50 @@ def print_training_details(variables, is_final_entry):
     print_columns(formatted, is_final_entry=is_final_entry)
 
 ############################################
-#             Train and Eval               #
+#               Evaluation                 #
+############################################
+
+def infer(model, loader, tta_level=0):
+
+    # Test-time augmentation strategy (for tta_level=2):
+    # 1. Flip/mirror the image left-to-right (50% of the time).
+    # 2. Translate the image by one pixel either up-and-left or down-and-right (50% of the time,
+    #    i.e. both happen 25% of the time).
+    #
+    # This creates 6 views per image (left/right times the two translations and no-translation),
+    # which we evaluate and then weight according to the given probabilities.
+
+    def infer_basic(inputs, net):
+        return net(inputs).clone()
+
+    def infer_mirror(inputs, net):
+        return 0.5 * net(inputs) + 0.5 * net(inputs.flip(-1))
+
+    def infer_mirror_translate(inputs, net):
+        logits = infer_mirror(inputs, net)
+        pad = 1
+        padded_inputs = F.pad(inputs, (pad,)*4, 'reflect')
+        inputs_translate_list = [
+            padded_inputs[:, :, 0:32, 0:32],
+            padded_inputs[:, :, 2:34, 2:34],
+        ]
+        logits_translate_list = [infer_mirror(inputs_translate, net)
+                                 for inputs_translate in inputs_translate_list]
+        logits_translate = torch.stack(logits_translate_list).mean(0)
+        return 0.5 * logits + 0.5 * logits_translate
+
+    model.eval()
+    test_images = loader.normalize(loader.images)
+    infer_fn = [infer_basic, infer_mirror, infer_mirror_translate][tta_level]
+    with torch.no_grad():
+        return torch.cat([infer_fn(inputs, model) for inputs in test_images.split(2000)])
+
+def evaluate(model, loader, tta_level=0):
+    logits = infer(model, loader, tta_level)
+    return (logits.argmax(1) == loader.labels).float().mean().item()
+
+############################################
+#                Training                  #
 ############################################
 
 def main(run, model_trainbias, model_freezebias):
@@ -491,15 +534,7 @@ def main(run, model_trainbias, model_freezebias):
         train_acc = (outputs.detach().argmax(1) == labels).float().mean().item()
         train_loss = loss.item() / batch_size
 
-        model.eval()
-        with torch.no_grad():
-            loss_list, acc_list = [], []
-            for inputs, labels in test_loader:
-                outputs = model(inputs)
-                loss_list.append(loss_fn(outputs, labels).float().mean())
-                acc_list.append((outputs.argmax(1) == labels).float().mean())
-            val_acc = torch.stack(acc_list).mean().item()
-            val_loss = torch.stack(loss_list).mean().item()
+        val_acc = evaluate(model, test_loader, tta_level=0)
 
         print_training_details(locals(), is_final_entry=False)
         run = None # Only print the run number once
@@ -510,47 +545,7 @@ def main(run, model_trainbias, model_freezebias):
 
     starter.record()
 
-    with torch.no_grad():
-
-        # Test-time augmentation strategy (for tta_level=2):
-        # 1. Flip/mirror the image left-to-right (50% of the time).
-        # 2. Translate the image by one pixel either up-and-left or down-and-right (50% of the time,
-        #    i.e. both happen 25% of the time).
-        #
-        # This creates 6 views per image (left/right times the two translations and no-translation),
-        # which we evaluate and then weight according to the given probabilities.
-
-        test_images = test_loader.normalize(test_loader.images)
-        test_labels = test_loader.labels
-
-        def infer_basic(inputs, net):
-            return net(inputs).clone() # using .clone() here averts some kind of bug with torch.compile
-
-        def infer_mirror(inputs, net):
-            return 0.5 * net(inputs) + 0.5 * net(inputs.flip(-1))
-
-        def infer_mirror_translate(inputs, net):
-            logits = infer_mirror(inputs, net)
-            pad = 1
-            padded_inputs = F.pad(inputs, (pad,)*4, 'reflect')
-            inputs_translate_list = [
-                padded_inputs[:, :, 0:32, 0:32],
-                padded_inputs[:, :, 2:34, 2:34],
-            ]
-            logits_translate_list = [infer_mirror(inputs_translate, net) for inputs_translate in inputs_translate_list]
-            logits_translate = torch.stack(logits_translate_list).mean(0)
-            return 0.5 * logits + 0.5 * logits_translate
-
-        if hyp['net']['tta_level'] == 0:
-            infer_fn = infer_basic
-        elif hyp['net']['tta_level'] == 1:
-            infer_fn = infer_mirror
-        elif hyp['net']['tta_level'] == 2:
-            infer_fn = infer_mirror_translate
-
-        model.eval()
-        logits_tta = torch.cat([infer_fn(inputs, model) for inputs in test_images.split(2000)])
-        tta_val_acc = (logits_tta.argmax(1) == test_labels).float().mean().item()
+    tta_val_acc = evaluate(model, test_loader, tta_level=hyp['net']['tta_level'])
 
     ender.record()
     torch.cuda.synchronize()
