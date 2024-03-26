@@ -44,12 +44,6 @@ hyp = {
         'weight_decay': 0.0153,     # weight decay per 1024 examples (decoupled from learning rate)
         'bias_scaler': 64.0,        # scales up learning rate (but not weight decay) for BatchNorm biases
         'label_smoothing': 0.2,
-        'ema': {
-            'start_epochs': 3,
-            'decay_base': 0.95,
-            'decay_pow': 3.,
-            'every_n_steps': 5,
-        },
         'whiten_bias_epochs': 3,    # how many epochs to train the whitening layer bias before freezing
     },
     'aug': {
@@ -368,12 +362,21 @@ def main(run):
     lr_biases = lr * hyp['opt']['bias_scaler']
 
     loss_fn = nn.CrossEntropyLoss(label_smoothing=hyp['opt']['label_smoothing'], reduction='none')
-
-    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'])
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
+    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'])
     if run == 'warmup':
         # The only purpose of the first run is to warmup, so we can use dummy data
         train_loader.labels = torch.randint(0, 10, size=(len(train_loader.labels),), device=train_loader.labels.device)
+    total_train_steps = ceil(len(train_loader) * epochs)
+
+    model = make_net()
+    current_steps = 0
+
+    norm_biases = [p for k, p in model.named_parameters() if 'norm' in k and p.requires_grad]
+    other_params = [p for k, p in model.named_parameters() if 'norm' not in k and p.requires_grad]
+    param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
+                     dict(params=other_params, lr=lr, weight_decay=wd/lr)]
+    optimizer = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
 
     def triangle(steps, start=0, end=0, peak=0.5):
         xp = torch.tensor([0, int(peak * steps), steps])
@@ -384,20 +387,11 @@ def main(run):
         indices = torch.sum(torch.ge(x[:, None], xp[None, :]), 1) - 1
         indices = torch.clamp(indices, 0, len(m) - 1)
         return m[indices] * x + b[indices]
-
-    total_train_steps = ceil(len(train_loader) * epochs)
     lr_schedule = triangle(total_train_steps, start=0.2, end=0.07, peak=0.23)
-
-    model = make_net()
-    lookahead_state = None
-    current_steps = 0
-
-    norm_biases = [p for k, p in model.named_parameters() if 'norm' in k and p.requires_grad]
-    other_params = [p for k, p in model.named_parameters() if 'norm' not in k and p.requires_grad]
-    param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
-                     dict(params=other_params, lr=lr, weight_decay=wd/lr)]
-    optimizer = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda i: lr_schedule[i])
+
+    alpha_schedule = 0.95**5 * (torch.arange(total_train_steps+1) / total_train_steps)**3
+    lookahead_state = LookaheadState(model)
 
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
@@ -435,21 +429,14 @@ def main(run):
 
             current_steps += 1
 
-            if epoch >= hyp['opt']['ema']['start_epochs'] and current_steps % hyp['opt']['ema']['every_n_steps'] == 0:
-                if lookahead_state is None:
-                    lookahead_state = LookaheadState(model)
-                else:
-                    # We warm up our ema's decay/momentum value over training (this lets us move fast, then average strongly at the end).
-                    base_rho = hyp['opt']['ema']['decay_base'] ** hyp['opt']['ema']['every_n_steps']
-                    rho = base_rho * (current_steps / total_train_steps) ** hyp['opt']['ema']['decay_pow']
-                    lookahead_state.update(model, decay=rho)
+            if current_steps % 5 == 0:
+                lookahead_state.update(model, decay=alpha_schedule[current_steps].item())
 
             if current_steps >= total_train_steps:
+                if lookahead_state is not None:
+                    # Copy back parameters a final time after each epoch
+                    lookahead_state.update(model, decay=1.0)
                 break
-
-        if lookahead_state is not None:
-            # Copy back parameters a final time after each epoch
-            lookahead_state.update(model, decay=1.0)
 
         ender.record()
         torch.cuda.synchronize()
@@ -462,9 +449,7 @@ def main(run):
         # Save the accuracy and loss from the last training batch of the epoch
         train_acc = (outputs.detach().argmax(1) == labels).float().mean().item()
         train_loss = loss.item() / batch_size
-
         val_acc = evaluate(model, test_loader, tta_level=0)
-
         print_training_details(locals(), is_final_entry=False)
         run = None # Only print the run number once
 
@@ -473,9 +458,7 @@ def main(run):
     ####################
 
     starter.record()
-
     tta_val_acc = evaluate(model, test_loader, tta_level=hyp['net']['tta_level'])
-
     ender.record()
     torch.cuda.synchronize()
     total_time_seconds += 1e-3 * starter.elapsed_time(ender)
