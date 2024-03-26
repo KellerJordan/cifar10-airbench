@@ -457,7 +457,6 @@ def main(run, model_trainbias, model_freezebias):
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
     ender = torch.cuda.Event(enable_timing=True)
-
     total_time_seconds = 0.0
 
     # Initialize the whitening layer using training images
