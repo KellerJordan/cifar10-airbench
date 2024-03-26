@@ -5,7 +5,7 @@ Fast training baselines for CIFAR-10.
 
 ## How to run
 
-To train a neural network with 94% accuracy, please run either
+To train a neural network with 94% accuracy, run either
 
 ```
 git clone https://github.com/KellerJordan/cifar10-airbench.git
@@ -23,9 +23,8 @@ python -c "import airbench; airbench.train94()"
 ## Motivation
 
 CIFAR-10 is among the most widely used datasets in machine learning, facilitating thousands of research projects per year. 
-The goal of this repo is to provide researchers with fast and stable training baselines, in order to accelerate small-scale neural network research.
-This repo contains three training baselines for CIFAR-10 which reach 94%, 95%, and 96% accuracy in state-of-the-art time.
-These trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
+This repo provides three fast and stable training baselines for CIFAR-10 in order to help accelerate small-scale neural network research.
+The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
 
 
 ## Training methods
@@ -43,7 +42,7 @@ Note that the first run of training is slower due to GPU warmup.
 
 ## Using the GPU-accelerated dataloader independently
 
-For writing custom fast CIFAR-10 training scripts, you may find GPU-accelerated dataloading useful:
+For writing custom fast CIFAR-10 training scripts, you may find it useful to use the GPU-accelerated dataloader independently:
 ```
 import airbench
 train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
