@@ -42,7 +42,7 @@ Note that the first run of training is slower due to GPU warmup.
 
 ## Using the GPU-accelerated dataloader independently
 
-For writing custom fast CIFAR-10 training scripts, you may find it useful to use the GPU-accelerated dataloader independently:
+For writing custom CIFAR-10 experiments or trainings, you may find it useful to use the GPU-accelerated dataloader independently.
 ```
 import airbench
 train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
@@ -55,7 +55,7 @@ for epoch in range(200):
         ...
 ```
 
-If you wish to modify the data used for training, it can be done like so:
+If you wish to modify the data in the loader, it can be done like so:
 ```
 import airbench
 train_loader = airbench.CifarLoader('/tmp/cifar10', train=True, aug=dict(flip=True, translate=4, cutout=16), batch_size=500)
