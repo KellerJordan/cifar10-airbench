@@ -83,7 +83,6 @@ class Conv(nn.Conv2d):
         super().reset_parameters()
         if self.bias is not None:
             self.bias.data.zero_()
-        # Create an implicit residual via identity initialization
         w = self.weight.data
         torch.nn.init.dirac_(w[:w.size(1)])
 

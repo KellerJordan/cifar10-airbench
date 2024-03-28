@@ -198,7 +198,6 @@ class LookaheadState:
         for ema_param, net_param in zip(self.net_ema.values(), net.state_dict().values()):
             if net_param.dtype in (torch.half, torch.float):
                 ema_param.lerp_(net_param, 1-decay)
-                # Copy the ema parameters back to the network, similarly to the Lookahead optimizer
                 net_param.copy_(ema_param)
 
 ############################################

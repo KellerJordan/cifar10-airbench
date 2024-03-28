@@ -230,7 +230,6 @@ class Conv(nn.Conv2d):
         super().reset_parameters()
         if self.bias is not None:
             self.bias.data.zero_()
-        # Create an implicit residual via identity initialization
         w = self.weight.data
         torch.nn.init.dirac_(w[:w.size(1)])
 
@@ -319,7 +318,6 @@ class LookaheadState:
         for ema_param, net_param in zip(self.net_ema.values(), net.state_dict().values()):
             if net_param.dtype in (torch.half, torch.float):
                 ema_param.lerp_(net_param, 1-decay)
-                # Copy the ema parameters back to the network, similarly to the Lookahead optimizer
                 net_param.copy_(ema_param)
 
 ############################################
@@ -404,7 +402,7 @@ def main(run, model_trainbias, model_freezebias):
     batch_size = hyp['opt']['batch_size']
     epochs = hyp['opt']['train_epochs']
     momentum = hyp['opt']['momentum']
-    # Assuming  gradients are constant in time, for Nesterov momentum, the below ratio is how much
+    # Assuming gradients are constant in time, for Nesterov momentum, the below ratio is how much
     # larger the default steps will be than the underlying per-example gradients. We divide the
     # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
     # of the choice of momentum.
