@@ -503,7 +503,6 @@ def main(run, model_trainbias, model_freezebias):
 
             if current_steps >= total_train_steps:
                 if lookahead_state is not None:
-                    # Copy back parameters a final time after each epoch
                     lookahead_state.update(model, decay=1.0)
                 break
 
