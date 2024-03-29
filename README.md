@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-Fast training baselines for CIFAR-10.
+Training baselines for CIFAR-10 with state-of-the-art speed.
 
 
 ## How to run
