@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-Training baselines for CIFAR-10 with state-of-the-art speed.
+Training methods for CIFAR-10 with state-of-the-art speed.
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
@@ -92,3 +92,8 @@ train_loader.labels = train_loader.labels[mask]
 train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence sampling is better than random.
 ```
 
+## Baselines
+
+Other training speed projects for CIFAR-10:
+* https://github.com/tysam-code/hlb-CIFAR10
+* https://github.com/apple/ml-cifar-10-faster
