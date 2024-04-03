@@ -10,7 +10,7 @@ Training baselines for CIFAR-10 with state-of-the-art speed.
 | `airbench96.py` | 96.05% | 46.3s | 7.5 |
 
 Timings are on a single NVIDIA A100 GPU.
-Note that the first run of training is slower due to GPU warmup.
+Note that the first run of training will be slower due to GPU warmup.
 
 ## How to run
 
