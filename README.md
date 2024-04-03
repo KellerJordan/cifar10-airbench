@@ -25,7 +25,7 @@ or
 
 ```
 pip install airbench
-python -c "import airbench; airbench.train94()"
+python -c "import airbench; airbench.warmup94(); airbench.train94()"
 ```
 
 
