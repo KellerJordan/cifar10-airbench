@@ -2,6 +2,15 @@
 
 Training baselines for CIFAR-10 with state-of-the-art speed.
 
+| Script | Mean accuracy | Time | PFLOPs |
+| - | - | - | - |
+| `airbench94_compiled.py` | 94.01% | 3.29s | 0.36 |
+| `airbench94.py` | 94.01% | 3.83s | 0.36 |
+| `airbench95.py` | 95.01% | 10.4s | 1.4 |
+| `airbench96.py` | 96.05% | 46.3s | 7.5 |
+
+Timings are on a single NVIDIA A100 GPU.
+Note that the first run of training is slower due to GPU warmup.
 
 ## How to run
 
@@ -25,19 +34,6 @@ python -c "import airbench; airbench.train94()"
 CIFAR-10 is among the most widely used datasets in machine learning, facilitating thousands of research projects per year. 
 This repo provides three fast and stable training baselines for CIFAR-10 in order to help accelerate small-scale neural network research.
 The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
-
-
-## Training methods
-
-| Script | Mean accuracy | Time | PFLOPs |
-| - | - | - | - |
-| `airbench94_compiled.py` | 94.01% | 3.29s | 0.36 |
-| `airbench94.py` | 94.01% | 3.83s | 0.36 |
-| `airbench95.py` | 95.01% | 10.4s | 1.4 |
-| `airbench96.py` | 96.05% | 46.3s | 7.5 |
-
-Timings are on a single NVIDIA A100 GPU.
-Note that the first run of training is slower due to GPU warmup.
 
 
 ## Using the GPU-accelerated dataloader independently
