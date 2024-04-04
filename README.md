@@ -96,6 +96,6 @@ train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence 
 
 ## Baselines
 
-Other training speed projects for CIFAR-10:
-* https://github.com/tysam-code/hlb-CIFAR10
-* https://github.com/apple/ml-cifar-10-faster
+This project builds on the excellent previous record https://github.com/tysam-code/hlb-CIFAR10.
+
+Which itself builds on the amazing series https://myrtle.ai/learn/how-to-train-your-resnet/.
