@@ -12,7 +12,7 @@ Training methods for CIFAR-10 with state-of-the-art speed.
 Timings are on a single NVIDIA A100 GPU.
 Note that the first run of training will be slower due to GPU warmup.
 
-`airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. It is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
+`airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. The former is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
 
 ## How to run
 
