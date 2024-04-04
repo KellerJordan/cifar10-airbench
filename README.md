@@ -94,8 +94,8 @@ train_loader.labels = train_loader.labels[mask]
 train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence sampling is better than random.
 ```
 
-## Baselines
+## Prior work
 
-This project builds on the excellent previous record https://github.com/tysam-code/hlb-CIFAR10.
+This project builds on the excellent previous record https://github.com/tysam-code/hlb-CIFAR10 (6.3 A100-seconds).
 
-Which itself builds on the amazing series https://myrtle.ai/learn/how-to-train-your-resnet/.
+Which itself builds on the amazing series https://myrtle.ai/learn/how-to-train-your-resnet/ (26 V100-seconds = >8 A100-seconds)
