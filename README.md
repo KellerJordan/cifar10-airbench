@@ -14,6 +14,8 @@ Note that the first run of training will be slower due to GPU warmup.
 
 `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. The former is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
 
+Paper: https://arxiv.org/abs/2404.00498
+
 ## How to run
 
 To train a neural network with 94% accuracy, run either
