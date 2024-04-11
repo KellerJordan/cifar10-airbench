@@ -1,7 +1,20 @@
 # CIFAR-10 Airbench 💨
 
-Fast training baselines for CIFAR-10.
+Training methods for CIFAR-10 with state-of-the-art speed.
 
+| Script | Mean accuracy | Time | PFLOPs |
+| - | - | - | - |
+| `airbench94_compiled.py` | 94.01% | 3.29s | 0.36 |
+| `airbench94.py` | 94.01% | 3.83s | 0.36 |
+| `airbench95.py` | 95.01% | 10.4s | 1.4 |
+| `airbench96.py` | 96.05% | 46.3s | 7.5 |
+
+Timings are on a single NVIDIA A100 GPU.
+Note that the first run of training will be slower due to GPU warmup.
+
+`airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. The former is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
+
+Paper: https://arxiv.org/abs/2404.00498
 
 ## How to run
 
@@ -16,7 +29,7 @@ or
 
 ```
 pip install airbench
-python -c "import airbench; airbench.train94()"
+python -c "import airbench; airbench.warmup94(); airbench.train94()"
 ```
 
 
@@ -25,19 +38,6 @@ python -c "import airbench; airbench.train94()"
 CIFAR-10 is among the most widely used datasets in machine learning, facilitating thousands of research projects per year. 
 This repo provides three fast and stable training baselines for CIFAR-10 in order to help accelerate small-scale neural network research.
 The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
-
-
-## Training methods
-
-| Script | Mean accuracy | Time | PFLOPs |
-| - | - | - | - |
-| `airbench94_compiled.py` | 94.01% | 3.29s | 0.36 |
-| `airbench94.py` | 94.01% | 3.83s | 0.36 |
-| `airbench95.py` | 95.01% | 10.4s | 1.4 |
-| `airbench96.py` | 96.05% | 46.3s | 7.5 |
-
-Timings are on a single NVIDIA A100 GPU.
-Note that the first run of training is slower due to GPU warmup.
 
 
 ## Using the GPU-accelerated dataloader independently
@@ -96,3 +96,8 @@ train_loader.labels = train_loader.labels[mask]
 train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence sampling is better than random.
 ```
 
+## Prior work
+
+This project builds on the excellent previous record https://github.com/tysam-code/hlb-CIFAR10 (6.3 A100-seconds).
+
+Which itself builds on the amazing series https://myrtle.ai/learn/how-to-train-your-resnet/ (26 V100-seconds = >8 A100-seconds)
