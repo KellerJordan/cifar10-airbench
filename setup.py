@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='airbench',
-    version='0.1.7',
+    version='0.1.8',
     author='Keller Jordan',
     author_email='kjordan4077@gmail.com',
     description='Utilities and baselines for fast neural network training on CIFAR-10',
