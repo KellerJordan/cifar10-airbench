@@ -17,6 +17,7 @@
 #
 # Update (06/13/24): Moved the last activation of each residual block to *after* the residual.
 # This improves the training efficiency by 10%, so we can reduce epochs to 36.0.
+# Evidence: 96.02 average accuracy in n=200 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
