@@ -95,7 +95,7 @@ def batch_cutout(inputs, size):
 
 class CifarLoader:
 
-    def __init__(self, path, train=True, batch_size=500, aug=None, drop_last=None, shuffle=None, altflip=False, gpu=0):
+    def __init__(self, path, train=True, batch_size=500, aug=None, drop_last=None, shuffle=None, altflip=False):
 
         data_path = os.path.join(path, 'train.pt' if train else 'test.pt')
         if not os.path.exists(data_path):
@@ -103,7 +103,7 @@ class CifarLoader:
             images = torch.tensor(dset.data)
             labels = torch.tensor(dset.targets)
             torch.save({'images': images, 'labels': labels, 'classes': dset.classes}, data_path)
-        data = torch.load(data_path, map_location=torch.device(gpu))
+        data = torch.load(data_path, map_location='cuda')
 
         self.epoch = 0
         self.images, self.labels, self.classes = data['images'], data['labels'], data['classes']
