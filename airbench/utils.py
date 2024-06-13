@@ -270,17 +270,16 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
                      dict(params=other_params, lr=lr, weight_decay=wd/lr)]
     optimizer = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
 
-    def triangle(steps, start=0, end=0, peak=0.5):
-        xp = torch.tensor([0, int(peak * steps), steps])
-        fp = torch.tensor([start, 1, end])
-        x = torch.arange(1+steps)
-        m = (fp[1:] - fp[:-1]) / (xp[1:] - xp[:-1])
-        b = fp[:-1] - (m * xp[:-1])
-        indices = torch.sum(torch.ge(x[:, None], xp[None, :]), 1) - 1
-        indices = torch.clamp(indices, 0, len(m) - 1)
-        return m[indices] * x + b[indices]
-    lr_schedule = triangle(total_train_steps, start=0.2, end=0.07, peak=0.23)
-    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lambda i: lr_schedule[i])
+    def get_lr(step):
+        warmup_steps = int(total_train_steps * 0.23)
+        warmdown_steps = total_train_steps - warmup_steps
+        if step < warmup_steps:
+            frac = step / warmup_steps
+            return 0.2 * (1 - frac) + 1.0 * frac
+        else:
+            frac = (step - warmup_steps) / warmdown_steps
+            return 1.0 * (1 - frac) + 0.07 * frac
+    scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, get_lr)
 
     alpha_schedule = 0.95**5 * (torch.arange(total_train_steps+1) / total_train_steps)**3
     lookahead_state = LookaheadState(model)
