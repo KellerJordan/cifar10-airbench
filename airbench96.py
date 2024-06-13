@@ -14,6 +14,9 @@
 # - Increased training duration to 40 epochs.
 #
 # If random flip is used instead of alternating, then decays to 96.01 average accuracy in n=200 runs.
+#
+# Update (06/13/24): Moved the last activation of each residual block to *after* the residual.
+# This improves the training efficiency by 10%, so we can reduce epochs to 36.0.
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -46,7 +49,7 @@ torch.backends.cudnn.benchmark = True
 
 hyp = {
     'opt': {
-        'train_epochs': 40.0,
+        'train_epochs': 36.0,
         'batch_size': 1024,
         'lr': 9.0,                  # learning rate per 1024 examples
         'momentum': 0.85,
@@ -245,8 +248,8 @@ class ConvGroup(nn.Module):
         x = self.activ(x)
         x = self.conv3(x)
         x = self.norm3(x)
-        x = self.activ(x)
         x = x + x0
+        x = self.activ(x)
         return x
 
 #############################################
