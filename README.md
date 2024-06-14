@@ -20,10 +20,11 @@ All timings are on a single NVIDIA A100 GPU.
 ---
 
 The methods used to obtain these training speeds, most notably *alternating flip*, are described in [the paper](https://arxiv.org/abs/2404.00498).
-(Note: `airbench96` has been improved since the paper from 46s to 35s.)
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
+
+(Note: `airbench96` has been improved since the paper from 46s to 35s.)
 
 ## How to run
 
