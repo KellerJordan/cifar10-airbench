@@ -25,7 +25,7 @@ To train a neural network with 94% accuracy, run either
 
 ```
 git clone https://github.com/KellerJordan/cifar10-airbench.git
-python airbench/airbench94.py
+cd airbench && python airbench94.py
 ```
 
 or
