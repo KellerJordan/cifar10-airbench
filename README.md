@@ -16,7 +16,7 @@ Note that the first run of training will be slower due to GPU warmup.
 
 Paper: https://arxiv.org/abs/2404.00498
 
-Note: `airbench96` has been improved since the paper.
+Note: `airbench96` has been improved since the paper, from 46s to 35s.
 
 ## How to run
 
