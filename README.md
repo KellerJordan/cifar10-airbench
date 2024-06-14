@@ -39,7 +39,7 @@ Note: `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield t
 
 ## Motivation
 
-CIFAR-10 is among the most widely used datasets in machine learning, facilitating [thousands of research projects per year](https://paperswithcode.com/dataset/cifar-10). 
+CIFAR-10 is one of the most widely used datasets in machine learning, facilitating [thousands of research projects per year](https://paperswithcode.com/dataset/cifar-10). 
 It is typically used for research which aims to understand fundamental properties of deep learning, rather than push the large-scale state-of-the-art.
 This repo provides fast and stable training baselines for CIFAR-10 in order to help accelerate this research.
 The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
