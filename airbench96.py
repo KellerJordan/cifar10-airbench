@@ -24,7 +24,7 @@
 # Update (06/13/24 part 2): Reduced the middle with from 512 to 384 and increased epochs to 37.
 # This significantly reduces the FLOPs from 5.6e15 to 4.9e15, and reduces the wallclock time
 # as well.
-# Evidence: 96.04 average accuracy in n=80 runs.
+# Evidence: 96.03 average accuracy in n=400 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
