@@ -17,6 +17,7 @@ Paper: https://arxiv.org/abs/2404.00498 (Note: `airbench96` has been improved si
 This project uses various novel training methods for maximum speed, including *alternating flip*.
 
 ![alt](img/alternating_flip.png)
+![curve](img/airbench94_intro.png)
 
 ## How to run
 
