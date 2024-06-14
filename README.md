@@ -19,7 +19,7 @@ All timings are on a single NVIDIA A100 GPU.
 
 ---
 
-The set of methods used to obtain these training speeds, including *alternating flip*, are described in [the paper](https://arxiv.org/abs/2404.00498).
+The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
