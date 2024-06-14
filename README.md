@@ -15,7 +15,7 @@ In comparison, a standard ResNet-18 training looks like this.
 | - | - | - |
 | ~96% | ~7min | 32.3 |
 
-Timings are on a single NVIDIA A100 GPU.
+All timings are on a single NVIDIA A100 GPU.
 Note that the first run of training will be slower due to GPU warmup.
 
 Paper: https://arxiv.org/abs/2404.00498 (Note: `airbench96` has been improved since the paper, from 46s to 35s.)
