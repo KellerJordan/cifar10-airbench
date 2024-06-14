@@ -40,7 +40,8 @@ Note: `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield t
 ## Motivation
 
 CIFAR-10 is among the most widely used datasets in machine learning, facilitating [thousands of research projects per year](https://paperswithcode.com/dataset/cifar-10). 
-This repo provides three fast and stable training baselines for CIFAR-10 in order to help accelerate small-scale neural network research.
+It is typically used for research which aims to understand fundamental properties of deep learning, rather than push the large-scale state-of-the-art.
+This repo provides fast and stable training baselines for CIFAR-10 in order to help accelerate this research.
 The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
 
 
@@ -105,3 +106,4 @@ train94(train_loader, epochs=16) # yields around 94% accuracy => low-confidence 
 This project builds on the excellent previous record https://github.com/tysam-code/hlb-CIFAR10 (6.3 A100-seconds to 94%).
 
 Which itself builds on the amazing series https://myrtle.ai/learn/how-to-train-your-resnet/ (26 V100-seconds to 94%, which is >=8 A100-seconds)
+
