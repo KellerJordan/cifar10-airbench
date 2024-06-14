@@ -1,30 +1,18 @@
 # A variant of airbench optimized for time-to-96%.
-# 46.3s runtime on an A100; 7.46 PFLOPs.
-# Evidence: 96.05 average accuracy in n=200 runs.
+# 34.7s runtime on an A100; 4.91 PFLOPs.
+# Evidence: 96.03 average accuracy in n=400 runs.
 #
-# We recorded the runtime of 46.3 seconds on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
+# We recorded the runtime of 34.7 seconds on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
 # NVIDIA-SMI 515.105.01   Driver Version: 515.105.01   CUDA Version: 11.7
 # torch.__version__ == '2.1.2+cu118'
 #
 # Changes relative to airbench:
-# - Doubled width and reduced learning rate.
-# - Added extra layer to each ConvBlock. The network now contains 10 conv layers.
+# - Increased network width and reduced learning rate & weight decay.
+# - Reduced the warmup duration and let the learning rate decay go all the way to zero at the end of training.
+# - Added an extra layer to each ConvBlock. The network now contains 10 conv layers.
 # - Added residual connections over the last two conv layers in each ConvBlock.
 # - Added 12-pixel cutout data augmentation and increased random-translation strength from 2 to 4 pixels.
-# - Increased training duration to 40 epochs.
-#
-# If random flip is used instead of alternating, then decays to 96.01 average accuracy in n=200 runs.
-#
-# Update (06/13/24): Moved the last activation of each residual block to *after* the residual,
-# and improved the learning rate schedule (shorter warmup + warmdown all the way to 0),
-# and reduced the weight decay from 0.0153 to 0.012, and got rid of custom batchnorm momentum.
-# This improves the training efficiency such that we can reduce epochs to 31.0.
-# Evidence: 96.01 average accuracy in n=400 runs.
-#
-# Update (06/13/24 part 2): Reduced the middle with from 512 to 384 and increased epochs to 37.
-# This significantly reduces the FLOPs from 5.6e15 to 4.9e15, and reduces the wallclock time
-# as well.
-# Evidence: 96.03 average accuracy in n=400 runs.
+# - Increased training duration to 37 epochs.
 
 #############################################
 #            Setup/Hyperparameters          #
