@@ -19,7 +19,7 @@
 # and improved the learning rate schedule (shorter warmup + warmdown all the way to 0),
 # and reduced the weight decay from 0.0153 to 0.012.
 # This improves the training efficiency such that we can reduce epochs to 31.0.
-# Evidence: 96.03 average accuracy in n=160 runs.
+# Evidence: 96.02 average accuracy in n=240 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
