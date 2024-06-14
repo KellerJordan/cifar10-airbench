@@ -17,9 +17,9 @@
 #
 # Update (06/13/24): Moved the last activation of each residual block to *after* the residual,
 # and improved the learning rate schedule (shorter warmup + warmdown all the way to 0),
-# and reduced the weight decay from 0.0153 to 0.012.
+# and reduced the weight decay from 0.0153 to 0.012, and got rid of custom batchnorm momentum.
 # This improves the training efficiency such that we can reduce epochs to 31.0.
-# Evidence: 96.02 average accuracy in n=240 runs.
+# Evidence: 96.01 average accuracy in n=400 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -72,7 +72,6 @@ hyp = {
             'block2': 512,
             'block3': 512,
         },
-        'batchnorm_momentum': 0.6,
         'scaling_factor': 1/9,
         'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
     },
@@ -229,15 +228,15 @@ class Conv(nn.Conv2d):
         torch.nn.init.dirac_(w[:w.size(1)])
 
 class ConvGroup(nn.Module):
-    def __init__(self, channels_in, channels_out, batchnorm_momentum):
+    def __init__(self, channels_in, channels_out):
         super().__init__()
         self.conv1 = Conv(channels_in,  channels_out)
         self.pool = nn.MaxPool2d(2)
-        self.norm1 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm1 = BatchNorm(channels_out)
         self.conv2 = Conv(channels_out, channels_out)
-        self.norm2 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm2 = BatchNorm(channels_out)
         self.conv3 = Conv(channels_out, channels_out)
-        self.norm3 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm3 = BatchNorm(channels_out)
         self.activ = nn.GELU()
 
     def forward(self, x):
@@ -259,15 +258,15 @@ class ConvGroup(nn.Module):
 #            Network Definition             #
 #############################################
 
-def make_net(widths=hyp['net']['widths'], batchnorm_momentum=hyp['net']['batchnorm_momentum']):
+def make_net(widths=hyp['net']['widths']):
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
         Conv(3, whiten_width, whiten_kernel_size, padding=0, bias=True),
         nn.GELU(),
-        ConvGroup(whiten_width,     widths['block1'], batchnorm_momentum),
-        ConvGroup(widths['block1'], widths['block2'], batchnorm_momentum),
-        ConvGroup(widths['block2'], widths['block3'], batchnorm_momentum),
+        ConvGroup(whiten_width,     widths['block1']),
+        ConvGroup(widths['block1'], widths['block2']),
+        ConvGroup(widths['block2'], widths['block3']),
         nn.MaxPool2d(3),
         Flatten(),
         nn.Linear(widths['block3'], 10, bias=False),
