@@ -16,9 +16,10 @@
 # If random flip is used instead of alternating, then decays to 96.01 average accuracy in n=200 runs.
 #
 # Update (06/13/24): Moved the last activation of each residual block to *after* the residual,
-# and improved the learning rate schedule (shorter warmup + warmdown all the way to 0).
-# This improves the training efficiency by 20%, so we can reduce epochs to 32.0.
-# Evidence: 96.01 average accuracy in n=184 runs.
+# and improved the learning rate schedule (shorter warmup + warmdown all the way to 0),
+# and reduced the weight decay from 0.0153 to 0.012.
+# This improves the training efficiency such that we can reduce epochs to 31.0.
+# Evidence: 96.03 average accuracy in n=160 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -51,14 +52,14 @@ torch.backends.cudnn.benchmark = True
 
 hyp = {
     'opt': {
-        'train_epochs': 32.0,
+        'train_epochs': 30.0,
         'batch_size': 1024,
-        'lr': 9.0,                  # learning rate per 1024 examples
+        'lr': 9.0,               # learning rate per 1024 examples
         'momentum': 0.85,
-        'weight_decay': 0.0153,     # weight decay per 1024 examples (decoupled from learning rate)
-        'bias_scaler': 64.0,        # scales up learning rate (but not weight decay) for BatchNorm biases
+        'weight_decay': 0.012,   # weight decay per 1024 examples (decoupled from learning rate)
+        'bias_scaler': 64.0,     # scales up learning rate (but not weight decay) for BatchNorm biases
         'label_smoothing': 0.2,
-        'whiten_bias_epochs': 3,    # how many epochs to train the whitening layer bias before freezing
+        'whiten_bias_epochs': 3, # how many epochs to train the whitening layer bias before freezing
     },
     'aug': {
         'flip': True,
