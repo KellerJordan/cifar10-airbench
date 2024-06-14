@@ -8,7 +8,7 @@ Training methods for CIFAR-10 with state-of-the-art speed.
 | `airbench94.py` | 94.01% | 3.83s | 0.36 |
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
 | `airbench96.py` | 96.03% | 34.7s | 4.9 |
-| Standard ResNet-18 | ~96.0% | ~7min | 32.3 |
+| Standard ResNet-18 | ~96% | ~7min | 32.3 |
 
 Timings are on a single NVIDIA A100 GPU.
 Note that the first run of training will be slower due to GPU warmup.
