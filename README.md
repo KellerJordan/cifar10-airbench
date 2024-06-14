@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-This project contains a set of training methods for CIFAR-10 which are state-of-the-art in terms of their training speed.
+This project contains state-of-the-art fast training methods for CIFAR-10.
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
