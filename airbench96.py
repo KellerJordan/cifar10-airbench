@@ -20,6 +20,11 @@
 # and reduced the weight decay from 0.0153 to 0.012, and got rid of custom batchnorm momentum.
 # This improves the training efficiency such that we can reduce epochs to 31.0.
 # Evidence: 96.01 average accuracy in n=400 runs.
+#
+# Update (06/13/24 part 2): Reduced the middle with from 512 to 384 and increased epochs to 37.
+# This significantly reduces the FLOPs from 5.6e15 to 4.9e15, and reduces the wallclock time
+# as well.
+# Evidence: 96.04 average accuracy in n=80 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -52,7 +57,7 @@ torch.backends.cudnn.benchmark = True
 
 hyp = {
     'opt': {
-        'train_epochs': 31.0,
+        'train_epochs': 37.0,
         'batch_size': 1024,
         'lr': 9.0,               # learning rate per 1024 examples
         'momentum': 0.85,
@@ -69,7 +74,7 @@ hyp = {
     'net': {
         'widths': {
             'block1': 128,
-            'block2': 512,
+            'block2': 384,
             'block3': 512,
         },
         'scaling_factor': 1/9,
