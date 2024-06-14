@@ -9,7 +9,7 @@ This project contains state-of-the-art fast training methods for CIFAR-10:
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
 | `airbench96.py` | 96.03% | 34.7s | 4.9 |
 
-For comparison, a standard ResNet-18 training is slower:
+In comparison, the standard trainings used in most studies are slower:
 
 | Baseline | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
