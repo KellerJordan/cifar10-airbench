@@ -26,11 +26,11 @@ torch.backends.cudnn.benchmark = True
 
 hyp = {
     'opt': {
-        'train_epochs': 40.0,
+        'train_epochs': 37.0,
         'batch_size': 1024,
         'lr': 9.0,                  # learning rate per 1024 examples
         'momentum': 0.85,
-        'weight_decay': 0.0153,     # weight decay per 1024 examples (decoupled from learning rate)
+        'weight_decay': 0.012,      # weight decay per 1024 examples (decoupled from learning rate)
         'bias_scaler': 64.0,        # scales up learning rate (but not weight decay) for BatchNorm biases
         'label_smoothing': 0.2,
         'whiten_bias_epochs': 3,    # how many epochs to train the whitening layer bias before freezing
@@ -43,10 +43,9 @@ hyp = {
     'net': {
         'widths': {
             'block1': 128,
-            'block2': 512,
+            'block2': 384,
             'block3': 512,
         },
-        'batchnorm_momentum': 0.6,
         'scaling_factor': 1/9,
         'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
     },
@@ -68,9 +67,9 @@ class Mul(nn.Module):
         return x * self.scale
 
 class BatchNorm(nn.BatchNorm2d):
-    def __init__(self, num_features, momentum, eps=1e-12,
+    def __init__(self, num_features, eps=1e-12,
                  weight=False, bias=True):
-        super().__init__(num_features, eps=eps, momentum=1-momentum)
+        super().__init__(num_features, eps=eps)
         self.weight.requires_grad = weight
         self.bias.requires_grad = bias
         # Note that PyTorch already initializes the weights to one and bias to zero
@@ -87,15 +86,15 @@ class Conv(nn.Conv2d):
         torch.nn.init.dirac_(w[:w.size(1)])
 
 class ConvGroup(nn.Module):
-    def __init__(self, channels_in, channels_out, batchnorm_momentum):
+    def __init__(self, channels_in, channels_out):
         super().__init__()
         self.conv1 = Conv(channels_in,  channels_out)
         self.pool = nn.MaxPool2d(2)
-        self.norm1 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm1 = BatchNorm(channels_out)
         self.conv2 = Conv(channels_out, channels_out)
-        self.norm2 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm2 = BatchNorm(channels_out)
         self.conv3 = Conv(channels_out, channels_out)
-        self.norm3 = BatchNorm(channels_out, batchnorm_momentum)
+        self.norm3 = BatchNorm(channels_out)
         self.activ = nn.GELU()
 
     def forward(self, x):
@@ -109,23 +108,23 @@ class ConvGroup(nn.Module):
         x = self.activ(x)
         x = self.conv3(x)
         x = self.norm3(x)
-        x = self.activ(x)
         x += x0
+        x = self.activ(x)
         return x
 
 #############################################
 #            Network Definition             #
 #############################################
 
-def make_net96(widths=hyp['net']['widths'], batchnorm_momentum=hyp['net']['batchnorm_momentum']):
+def make_net96(widths=hyp['net']['widths']):
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
         Conv(3, whiten_width, whiten_kernel_size, padding=0, bias=True),
         nn.GELU(),
-        ConvGroup(whiten_width,     widths['block1'], batchnorm_momentum),
-        ConvGroup(widths['block1'], widths['block2'], batchnorm_momentum),
-        ConvGroup(widths['block2'], widths['block3'], batchnorm_momentum),
+        ConvGroup(whiten_width,     widths['block1']),
+        ConvGroup(widths['block1'], widths['block2']),
+        ConvGroup(widths['block2'], widths['block3']),
         nn.MaxPool2d(3),
         Flatten(),
         nn.Linear(widths['block3'], 10, bias=False),
@@ -147,7 +146,7 @@ def train96(train_loader=None, epochs=hyp['opt']['train_epochs'], label_smoothin
             learning_rate=hyp['opt']['lr'], bias_scaler=hyp['opt']['bias_scaler'],
             momentum=hyp['opt']['momentum'], weight_decay=hyp['opt']['weight_decay'],
             whiten_bias_epochs=hyp['opt']['whiten_bias_epochs'], tta_level=hyp['net']['tta_level'],
-            make_net=make_net96, run=0, verbose=True):
+            make_net=make_net96, run=0, verbose=True, lr_peak=0.1, lr_end=0):
 
     if train_loader is None:
         train_loader = CifarLoader('cifar10', train=True, batch_size=hyp['opt']['batch_size'], aug=hyp['aug'], altflip=True)

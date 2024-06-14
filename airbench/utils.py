@@ -236,7 +236,7 @@ def print_training_details(variables, is_final_entry):
 ############################################
 
 def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, momentum, weight_decay,
-          whiten_bias_epochs, tta_level, make_net, run, verbose):
+          whiten_bias_epochs, tta_level, make_net, run, verbose, lr_peak=0.23, lr_end=0.07):
 
     train_loader.epoch = 0
 
@@ -271,14 +271,14 @@ def train(train_loader, epochs, label_smoothing, learning_rate, bias_scaler, mom
     optimizer = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
 
     def get_lr(step):
-        warmup_steps = int(total_train_steps * 0.23)
+        warmup_steps = int(total_train_steps * lr_peak)
         warmdown_steps = total_train_steps - warmup_steps
         if step < warmup_steps:
             frac = step / warmup_steps
             return 0.2 * (1 - frac) + 1.0 * frac
         else:
             frac = (step - warmup_steps) / warmdown_steps
-            return 1.0 * (1 - frac) + 0.07 * frac
+            return 1.0 * (1 - frac) + lr_end * frac
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, get_lr)
 
     alpha_schedule = 0.95**5 * (torch.arange(total_train_steps+1) / total_train_steps)**3
