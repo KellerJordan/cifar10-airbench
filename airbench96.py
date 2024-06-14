@@ -209,9 +209,9 @@ class Mul(nn.Module):
         return x * self.scale
 
 class BatchNorm(nn.BatchNorm2d):
-    def __init__(self, num_features, momentum, eps=1e-12,
+    def __init__(self, num_features, eps=1e-12,
                  weight=False, bias=True):
-        super().__init__(num_features, eps=eps, momentum=1-momentum)
+        super().__init__(num_features, eps=eps)
         self.weight.requires_grad = weight
         self.bias.requires_grad = bias
         # Note that PyTorch already initializes the weights to one and bias to zero
