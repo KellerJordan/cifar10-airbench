@@ -15,9 +15,10 @@
 #
 # If random flip is used instead of alternating, then decays to 96.01 average accuracy in n=200 runs.
 #
-# Update (06/13/24): Moved the last activation of each residual block to *after* the residual.
-# This improves the training efficiency by 10%, so we can reduce epochs to 36.0.
-# Evidence: 96.02 average accuracy in n=200 runs.
+# Update (06/13/24): Moved the last activation of each residual block to *after* the residual,
+# and improved the learning rate schedule (shorter warmup + warmdown all the way to 0).
+# This improves the training efficiency by 20%, so we can reduce epochs to 32.0.
+# Evidence: 96.01 average accuracy in n=184 runs.
 
 #############################################
 #            Setup/Hyperparameters          #
@@ -50,7 +51,7 @@ torch.backends.cudnn.benchmark = True
 
 hyp = {
     'opt': {
-        'train_epochs': 36.0,
+        'train_epochs': 32.0,
         'batch_size': 1024,
         'lr': 9.0,                  # learning rate per 1024 examples
         'momentum': 0.85,
@@ -423,14 +424,14 @@ def main(run):
     optimizer = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
 
     def get_lr(step):
-        warmup_steps = int(total_train_steps * 0.23)
+        warmup_steps = int(total_train_steps * 0.1)
         warmdown_steps = total_train_steps - warmup_steps
         if step < warmup_steps:
             frac = step / warmup_steps
             return 0.2 * (1 - frac) + 1.0 * frac
         else:
-            frac = (step - warmup_steps) / warmdown_steps
-            return 1.0 * (1 - frac) + 0.07 * frac
+            frac = (total_train_steps - step) / warmdown_steps
+            return frac
     scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, get_lr)
 
     alpha_schedule = 0.95**5 * (torch.arange(total_train_steps+1) / total_train_steps)**3
