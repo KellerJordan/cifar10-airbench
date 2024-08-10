@@ -18,14 +18,14 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 
 All timings are on a single NVIDIA A100 GPU.
 
+Note: `airbench96` has been improved since the paper from 46s to 35s. In addition, `faster_airbench96` is an improved (but more complicated) method which uses data filtering by a small proxy model.
+
 ---
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
-
-(Note: `airbench96` has been improved since the paper from 46s to 35s.)
 
 ## How to run
 
