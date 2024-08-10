@@ -8,7 +8,7 @@ This project contains state-of-the-art fast training methods for CIFAR-10:
 | `airbench94.py` | 94.01% | 3.83s | 0.36 |
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
 | `airbench96.py` | 96.03% | 34.7s | 4.9 |
-| `faster_airbench96.py` | 96.03% | 28.0s | 3.1 |
+| `faster_airbench96.py` | 96.03% | 27.3s | 3.1 |
 
 For a comparison, the standard training used in most studies on CIFAR-10 is much slower:
 
