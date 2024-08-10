@@ -1,5 +1,6 @@
 # A variant of airbench optimized for time-to-96%.
 # 28.0s runtime on an A100; 3.1 PFLOPs.
+# Evidence: 96.03 average accuracy in n=100 runs.
 #
 # We recorded the above runtime on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
 # NVIDIA-SMI 515.105.01   Driver Version: 515.105.01   CUDA Version: 11.7
