@@ -1,7 +1,7 @@
 # airbench94_compiled.py
 #
 # This script is designed to reach 94% accuracy on the CIFAR-10 test-set in the shortest possible time
-# after first seeing the training set. It runs in 3.29 seconds on a single NVIDIA A100.
+# after first seeing the training set. It runs in 3.09 seconds on a single NVIDIA A100.
 #
 # It contains the following methods:
 #
@@ -31,9 +31,9 @@
 # To confirm that the mean accuracy is above 94%, we ran a test of n=1000 runs, which yielded an
 # average accuracy of 94.01% (p<0.0001 for the true mean being below 94%, via t-test).
 #
-# The runtime of 3.29 seconds was recorded on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
-# NVIDIA-SMI 525.147.05   Driver Version: 525.147.05   CUDA Version: 12.0
-# torch.__version__ == '2.2.1'
+# The runtime of 3.09 seconds was recorded on an NVIDIA A100-SXM4-40GB with the following nvidia-smi:
+# NVIDIA-SMI 525.85.12    Driver Version: 525.85.12    CUDA Version: 12.0
+# torch.__version__ == '2.4.0+cu121'
 #
 # Note that the first time this script is run, compilation takes several minutes. See airbench94.py for
 # a script with much less warmup time.

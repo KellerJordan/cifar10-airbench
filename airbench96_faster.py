@@ -2,7 +2,7 @@
 # 27.3s runtime on an A100; 3.1 PFLOPs.
 # Evidence: 96.03 average accuracy in n=100 runs.
 #
-# We recorded the above runtime on an NVIDIA A100-SXM4-80GB with the following nvidia-smi:
+# We recorded the above runtime on an NVIDIA A100-SXM4-40GB with the following nvidia-smi:
 # NVIDIA-SMI 515.105.01   Driver Version: 515.105.01   CUDA Version: 11.7
 # torch.__version__ == '2.4.0+cu121'
 
