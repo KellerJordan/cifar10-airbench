@@ -251,7 +251,8 @@ class ConvGroup(nn.Module):
 #            Network Definition             #
 #############################################
 
-def make_net(widths=hyp['net']['widths']):
+def make_net():
+    widths = hyp['net']['widths']
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
