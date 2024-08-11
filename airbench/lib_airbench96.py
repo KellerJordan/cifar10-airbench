@@ -1,4 +1,4 @@
-# 96.05 in n=200 runs.
+# 96.03 in n=200 runs.
 
 from .utils import train, CifarLoader
 
@@ -116,7 +116,8 @@ class ConvGroup(nn.Module):
 #            Network Definition             #
 #############################################
 
-def make_net96(widths=hyp['net']['widths']):
+def make_net96():
+    widths = hyp['net']['widths']
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
