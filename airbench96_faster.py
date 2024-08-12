@@ -1,6 +1,6 @@
 # A variant of airbench optimized for time-to-96%.
 # 27.3s runtime on an A100; 3.1 PFLOPs.
-# Evidence: 96.03 average accuracy in n=100 runs.
+# Evidence: 96.00 average accuracy in n=200 runs.
 #
 # We recorded the above runtime on an NVIDIA A100-SXM4-40GB with the following nvidia-smi:
 # NVIDIA-SMI 515.105.01   Driver Version: 515.105.01   CUDA Version: 11.7
@@ -699,7 +699,7 @@ if __name__ == "__main__":
 
     print_columns(logging_columns_list, is_head=True)
     accs = torch.tensor([main(run, hyp, model_proxy, model_trainbias, model_freezebias)
-                         for run in range(10)])
+                         for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log = {'code': code, 'accs': accs}
