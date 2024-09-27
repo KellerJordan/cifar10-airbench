@@ -8,6 +8,7 @@ This project contains state-of-the-art fast training methods for CIFAR-10:
 | `airbench94.py` | 94.01% | 3.83s | 0.36 |
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
 | `airbench96.py` | 96.03% | 34.7s | 4.9 |
+| `airbench94_spectral.py` | 94.05% | 2.73s | 0.29 |
 | `airbench96_faster.py` | 96.00% | 27.3s | 3.1 |
 
 For a comparison, the standard training used in most studies on CIFAR-10 is much slower:
@@ -19,6 +20,7 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 All timings are on a single NVIDIA A100 GPU.
 
 Note: `airbench96` has been improved since the paper from 46s to 35s. In addition, `airbench96_faster` is an improved (but more complicated) method which uses data filtering by a small proxy model.
+And `airbench94_spectral` is an improved method using spectral gradient descent.
 
 ---
 
