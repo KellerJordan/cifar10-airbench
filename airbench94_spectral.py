@@ -87,7 +87,7 @@ def zeroth_power_via_newton(G, steps=10):
 
     d1, d2 = G.shape
     d = min(d1, d2)
-    I = torch.eye(d).to(G.device).to(G.dtype)
+    I = torch.eye(d, device=G.device, dtype=G.dtype)
 
     # store the smaller of the squares as S
     S = G @ G.T if d1 < d2 else G.T @ G
@@ -96,16 +96,18 @@ def zeroth_power_via_newton(G, steps=10):
 
     # Now let's set up the state for the Lakic (1998) method
     N = S
-    X = torch.eye(d).to(G.device).to(G.dtype)
+    X = I.clone()
 
     # Now let's run the iteration
-    for _ in range(steps):
+    for step in range(steps):
         U = (3 * I - N) / 2
-        X = X @ U
-        N = N @ U @ U
+        X = X @ U if step > 0 else U # optimization since X = I on step 0
+        if step < steps-1: # optimization suggested by @EitanTurok https://x.com/EitanTurok/status/1839754807696855333
+            N = N @ U @ U
+    X /= S_norm.sqrt()
 
     # X should now store either (G G^T)^(-1/2) or (G^T G)^(-1/2)
-    return X @ G / S_norm.sqrt() if d1 < d2 else G @ X / S_norm.sqrt()
+    return X @ G if d1 < d2 else G @ X
 
 #def zeroth_power_via_svd(G):
 #    U, S, V = G.svd()
