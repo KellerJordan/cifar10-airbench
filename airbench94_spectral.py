@@ -1,7 +1,7 @@
 """
 airbench94_spectral.py
-Runs in 2.73 seconds on a 400W NVIDIA A100
-Attains 94.05 mean accuracy (n=400 trials)
+Runs in 2.67 seconds on a 400W NVIDIA A100
+Attains 94.04 mean accuracy (n=200 trials)
 """
 
 #############################################
@@ -70,7 +70,7 @@ from torch.optim.optimizer import Optimizer
 from typing import List, Optional
 
 @torch.compile
-def zeroth_power_via_newton(G, steps=10):
+def zeroth_power_via_newton(G, steps=9):
     """
     Computing zeroth matrix powers via Lakic 1998.
     paper: "On the Computation of the Matrix k-th Root"
@@ -621,7 +621,7 @@ if __name__ == "__main__":
 
     print_columns(logging_columns_list, is_head=True)
     main('warmup', model_trainbias, model_freezebias)
-    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(400)])
+    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log = {'code': code, 'accs': accs}
