@@ -124,63 +124,33 @@ class ZeroPowerSGD(Optimizer):
         defaults = dict(lr=lr, momentum=momentum, nesterov=nesterov)
         super().__init__(params, defaults)
 
-    def step(self, closure=None):
-        loss = None
-        if closure is not None:
-            with torch.enable_grad():
-                loss = closure()
-
+    def step(self):
         for group in self.param_groups:
-            params_with_grad = [p for p in group['params'] if p.grad is not None]
-            d_p_list = [p.grad for p in params_with_grad]
-            momentum_buffer_list = [self.state[p].get('momentum_buffer') for p in params_with_grad]
+            lr = group['lr']
+            momentum = group['momentum']
+            nesterov = group['nesterov']
+            for i, p in enumerate(group['params']):
+                g = p.grad
+                if g is None:
+                    continue
 
-            zeropower_sgd(params_with_grad,
-                       d_p_list,
-                       momentum_buffer_list,
-                       momentum=group['momentum'],
-                       lr=group['lr'],
-                       nesterov=group['nesterov'])
+                if momentum != 0:
+                    buf = self.state[p].get('momentum_buffer')
+                    if buf is None:
+                        buf = torch.clone(g).detach()
+                        self.state[p]['momentum_buffer'] = buf
+                    else:
+                        buf.mul_(momentum).add_(g)
+                    g = g.add(buf, alpha=momentum) if nesterov else buf
 
-            # update momentum_buffers in state
-            for p, momentum_buffer in zip(params_with_grad, momentum_buffer_list):
-                self.state[p]['momentum_buffer'] = momentum_buffer
-
-        return loss
-
-def zeropower_sgd(params: List[Tensor],
-                  d_p_list: List[Tensor],
-                  momentum_buffer_list: List[Optional[Tensor]],
-                  *,
-                  momentum: float,
-                  lr: float,
-                  nesterov: bool):
-
-    for i, param in enumerate(params):
-        d_p = d_p_list[i]
-
-        if momentum != 0:
-            buf = momentum_buffer_list[i]
-
-            if buf is None:
-                buf = torch.clone(d_p).detach()
-                momentum_buffer_list[i] = buf
-            else:
-                buf.mul_(momentum).add_(d_p)
-
-            if nesterov:
-                d_p = d_p.add(buf, alpha=momentum)
-            else:
-                d_p = buf
-
-        # normalize the weight
-        scale = param.data.norm() / len(param.data)**0.5
-        param.data.div_(scale)
-        # whiten the gradient
-        g = d_p.reshape(len(d_p), -1).bfloat16()
-        update = zeroth_power_via_newton(g).to(param.dtype).view(param.shape)
-        # take a step
-        param.data.add_(update, alpha=-lr)
+                # normalize the weight
+                scale = p.data.norm() / len(p.data)**0.5
+                p.data.div_(scale)
+                # whiten the gradient
+                g = g.reshape(len(g), -1).bfloat16()
+                update = zeroth_power_via_newton(g).to(p.dtype).view(p.shape)
+                # take a step
+                p.data.add_(update, alpha=-lr)
 
 #############################################
 #                DataLoader                 #
