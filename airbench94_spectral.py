@@ -108,7 +108,8 @@ def zeroth_power_via_newton(G, steps=9):
 #    U, S, V = G.svd()
 #    return U @ V.T
 
-class ZeroPowerSGD(torch.optim.optimizer.Optimizer):
+from torch.optim.optimizer import Optimizer
+class ZeroPowerSGD(Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0, nesterov=False):
         if lr < 0.0:
             raise ValueError(f"Invalid learning rate: {lr}")
