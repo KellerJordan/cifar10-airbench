@@ -64,11 +64,6 @@ hyp = {
 #           Zero-Power Optimizer            #
 #############################################
 
-import torch
-from torch import Tensor
-from torch.optim.optimizer import Optimizer
-from typing import List, Optional
-
 @torch.compile
 def zeroth_power_via_newton(G, steps=9):
     """
@@ -113,7 +108,7 @@ def zeroth_power_via_newton(G, steps=9):
 #    U, S, V = G.svd()
 #    return U @ V.T
 
-class ZeroPowerSGD(Optimizer):
+class ZeroPowerSGD(torch.optim.optimizer.Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0, nesterov=False):
         if lr < 0.0:
             raise ValueError(f"Invalid learning rate: {lr}")
