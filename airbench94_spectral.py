@@ -80,6 +80,9 @@ def zeroth_power_via_newton(G, steps=9):
     Modifications: To speed things up, I am running this in bfloat16 using torch.compile.
     """
 
+    orig_dtype = G.dtype
+    G = G.bfloat16()
+
     d1, d2 = G.shape
     d = min(d1, d2)
     I = torch.eye(d, device=G.device, dtype=G.dtype)
@@ -102,7 +105,8 @@ def zeroth_power_via_newton(G, steps=9):
     X /= S_norm.sqrt()
 
     # X should now store either (G G^T)^(-1/2) or (G^T G)^(-1/2)
-    return X @ G if d1 < d2 else G @ X
+    O = X @ G if d1 < d2 else G @ X
+    return O.to(orig_dtype)
 
 #def zeroth_power_via_svd(G):
 #    U, S, V = G.svd()
@@ -142,8 +146,8 @@ class ZeroPowerSGD(Optimizer):
                 scale = p.data.norm() / len(p.data)**0.5
                 p.data.div_(scale)
                 # whiten the gradient
-                g = g.reshape(len(g), -1).bfloat16()
-                update = zeroth_power_via_newton(g).to(p.dtype).view(p.shape)
+                g = g.reshape(len(g), -1)
+                update = zeroth_power_via_newton(g).view(p.shape)
                 # take a step
                 p.data.add_(update, alpha=-lr)
 
