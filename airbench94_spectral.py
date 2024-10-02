@@ -127,7 +127,6 @@ class SpectralSGDM(torch.optim.Optimizer):
         for group in self.param_groups:
             lr = group['lr']
             momentum = group['momentum']
-            nesterov = group['nesterov']
             for p in group['params']:
                 g = p.grad
                 if g is None:
@@ -139,7 +138,7 @@ class SpectralSGDM(torch.optim.Optimizer):
                         state['momentum_buffer'] = torch.zeros_like(g)
                     buf = state['momentum_buffer']
                     buf.mul_(momentum).add_(g)
-                    g = g.add(buf, alpha=momentum) if nesterov else buf
+                    g = g.add(buf, alpha=momentum) if group['nesterov'] else buf
 
                 # normalize the weight
                 scale = p.data.norm() / len(p.data)**0.5
