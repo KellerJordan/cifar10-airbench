@@ -125,18 +125,17 @@ class ZeroPowerSGD(Optimizer):
             lr = group['lr']
             momentum = group['momentum']
             nesterov = group['nesterov']
-            for i, p in enumerate(group['params']):
+            for p in group['params']:
                 g = p.grad
                 if g is None:
                     continue
+                state = self.state[p]
 
                 if momentum != 0:
-                    buf = self.state[p].get('momentum_buffer')
-                    if buf is None:
-                        buf = torch.clone(g).detach()
-                        self.state[p]['momentum_buffer'] = buf
-                    else:
-                        buf.mul_(momentum).add_(g)
+                    if 'momentum_buffer' not in state.keys():
+                        state['momentum_buffer'] = torch.zeros_like(g)
+                    buf = state['momentum_buffer']
+                    buf.mul_(momentum).add_(g)
                     g = g.add(buf, alpha=momentum) if nesterov else buf
 
                 # normalize the weight
