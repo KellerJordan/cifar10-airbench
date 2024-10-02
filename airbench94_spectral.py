@@ -140,14 +140,9 @@ class SpectralSGDM(torch.optim.Optimizer):
                     buf.mul_(momentum).add_(g)
                     g = g.add(buf, alpha=momentum) if group['nesterov'] else buf
 
-                # normalize the weight
-                scale = p.data.norm() / len(p.data)**0.5
-                p.data.div_(scale)
-                # whiten the gradient
-                g = g.reshape(len(g), -1)
-                update = zeroth_power_via_newton(g).view(p.shape)
-                # take a step
-                p.data.add_(update, alpha=-lr)
+                p.data.mul_(len(p.data)**0.5 / p.data.norm()) # normalize the weight
+                update = zeroth_power_via_newton(g.reshape(len(g), -1)).view(g.shape) # whiten the update
+                p.data.add_(update, alpha=-lr) # take a step
 
 #############################################
 #                DataLoader                 #
