@@ -112,7 +112,7 @@ def zeroth_power_via_newton(G, steps=9):
 #    U, S, V = G.svd()
 #    return U @ V.T
 
-class SpectralSGDM(torch.optim.Optimizer):
+class Muon(torch.optim.Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0, nesterov=False):
         if lr < 0.0:
             raise ValueError(f"Invalid learning rate: {lr}")
@@ -455,7 +455,7 @@ def main(run, model_trainbias, model_freezebias):
     fc_layer = model._orig_mod[-2].weight
     param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
                      dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
-    optimizer1 = SpectralSGDM(filter_params, lr=0.24, momentum=0.6, nesterov=True)
+    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     #optimizer1 = torch.optim.SGD(filter_params, lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
@@ -469,7 +469,7 @@ def main(run, model_trainbias, model_freezebias):
     fc_layer = model._orig_mod[-2].weight
     param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
                      dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
-    optimizer1 = SpectralSGDM(filter_params, lr=0.24, momentum=0.6, nesterov=True)
+    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     #optimizer1 = torch.optim.SGD(filter_params, lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer1_freezebias = optimizer1
@@ -580,7 +580,7 @@ if __name__ == "__main__":
 
     print_columns(logging_columns_list, is_head=True)
     main('warmup', model_trainbias, model_freezebias)
-    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(200)])
+    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(50)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log = {'code': code, 'accs': accs}
