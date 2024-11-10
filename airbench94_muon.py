@@ -1,7 +1,7 @@
 """
 airbench94_spectral.py
 Runs in 2.67 seconds on a 400W NVIDIA A100
-Attains 94.04 mean accuracy (n=200 trials)
+Attains 94.02 mean accuracy (n=200 trials)
 """
 
 #############################################
@@ -65,52 +65,29 @@ hyp = {
 #############################################
 
 @torch.compile
-def zeroth_power_via_newton(G, steps=9):
+def zeropower_via_newtonschulz5(G, steps=5, eps=1e-7):
     """
-    Computing zeroth matrix powers via Lakic 1998.
-    paper: "On the Computation of the Matrix k-th Root"
-    Suppose we have a matrix G = USV^T and we want to compute G^0 defined via G^0 = UV^T.
-    We might want to do this to run "stochastic spectral descent" of Carlson et al 2015.
-    The naive way to do this is via the SVD. But we can also just do (GG^T)^(-1/2) G or
-    alternatively G (G^TG)^(-1/2) and apply the iterative method from Lakic 1998.
-    In particular, we implement the first special case of Alg 1 in that paper.
-
-    Code taken from: https://gist.github.com/jxbz/fe235ee1c72b8b41ccd0d02b43378cf2
-    https://x.com/jxbz/status/1821610280708948103
-    Modifications: To speed things up, I am running this in bfloat16 using torch.compile.
+    Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
+    quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
+    of minimizing steps, it turns out to be empirically effective to keep increasing the slope at
+    zero even beyond the point where the iteration no longer converges all the way to one everywhere
+    on the interval. This iteration therefore does not produce UV^T but rather something like US'V^T
+    where S' is diagonal with S_{ii}' \sim Uniform(0.5, 1.5), which turns out not to hurt model
+    performance at all relative to UV^T, where USV^T = G is the SVD.
     """
-
-    orig_dtype = G.dtype
-    G = G.bfloat16()
-
-    d1, d2 = G.shape
-    d = min(d1, d2)
-    I = torch.eye(d, device=G.device, dtype=G.dtype)
-
-    # store the smaller of the squares as S
-    S = G @ G.T if d1 < d2 else G.T @ G
-    S_norm = torch.linalg.matrix_norm(S, ord='fro') # there is freedom here. See Lakic (1998) Thm 2.3
-    S /= S_norm
-
-    # Now let's set up the state for the Lakic (1998) method
-    N = S
-    X = I.clone()
-
-    # Now let's run the iteration
-    for step in range(steps):
-        U = (3 * I - N) / 2
-        X = X @ U if step > 0 else U # optimization since X = I on step 0
-        if step < steps-1: # optimization suggested by @EitanTurok https://x.com/EitanTurok/status/1839754807696855333
-            N = N @ U @ U
-    X /= S_norm.sqrt()
-
-    # X should now store either (G G^T)^(-1/2) or (G^T G)^(-1/2)
-    O = X @ G if d1 < d2 else G @ X
-    return O.to(orig_dtype)
-
-#def zeroth_power_via_svd(G):
-#    U, S, V = G.svd()
-#    return U @ V.T
+    assert len(G.shape) == 2
+    a, b, c = (3.4445, -4.7750,  2.0315)
+    X = G.bfloat16()
+    X /= (X.norm() + eps) # ensure top singular value <= 1
+    if G.size(0) > G.size(1):
+        X = X.T
+    for _ in range(steps):
+        A = X @ X.T
+        B = A @ X
+        X = a * X + b * B + c * A @ B
+    if G.size(0) > G.size(1):
+        X = X.T
+    return X
 
 class Muon(torch.optim.Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0, nesterov=False):
@@ -141,7 +118,7 @@ class Muon(torch.optim.Optimizer):
                     g = g.add(buf, alpha=momentum) if group['nesterov'] else buf
 
                 p.data.mul_(len(p.data)**0.5 / p.data.norm()) # normalize the weight
-                update = zeroth_power_via_newton(g.reshape(len(g), -1)).view(g.shape) # whiten the update
+                update = zeropower_via_newtonschulz5(g.reshape(len(g), -1)).view(g.shape) # whiten the update
                 p.data.add_(update, alpha=-lr) # take a step
 
 #############################################
@@ -580,7 +557,7 @@ if __name__ == "__main__":
 
     print_columns(logging_columns_list, is_head=True)
     main('warmup', model_trainbias, model_freezebias)
-    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(50)])
+    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log = {'code': code, 'accs': accs}
