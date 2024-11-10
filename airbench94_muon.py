@@ -1,7 +1,7 @@
 """
 airbench94_spectral.py
-Runs in 2.67 seconds on a 400W NVIDIA A100
-Attains 94.02 mean accuracy (n=200 trials)
+Runs in 2.59 seconds on a 400W NVIDIA A100
+Attains 94.01 mean accuracy (n=200 trials)
 """
 
 #############################################
@@ -65,7 +65,7 @@ hyp = {
 #############################################
 
 @torch.compile
-def zeropower_via_newtonschulz5(G, steps=5, eps=1e-7):
+def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
     """
     Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
     quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
