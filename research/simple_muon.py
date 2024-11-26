@@ -20,8 +20,11 @@ bs=1000 SGD(wd=0) Muon(lr=0.16, momentum=0.8) -> 93.67 (n=25)
 bs=1000 SGD(wd=0) -> 93.85 (n=20)
 
 wd=0 for head -> 94.00 (n=200)
-Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head -> 94.01 (n=50)
+Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head -> 94.01 (n=50), 94.00 (n=200)
 ^ lr=0.005 -> 93.96 (n=50)
+
+Now always with Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head...
+Adam(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.96 (n=200)
 """
 
 #############################################
@@ -246,7 +249,7 @@ def main(run, model):
 
 if __name__ == "__main__":
     model = torch.compile(make_net(), mode='max-autotune')
-    accs = torch.tensor([main(run, model) for run in range(50)])
+    accs = torch.tensor([main(run, model) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log_dir = os.path.join('logs', str(uuid.uuid4()))
