@@ -21,46 +21,12 @@ from airbench import CifarLoader, evaluate
 
 torch.backends.cudnn.benchmark = True
 
-hyp = {
-    'opt': {
-        'train_epochs': 8,
-        'batch_size': 2000,
-        'lr': 6.5,                 # learning rate per 1024 examples
-        'momentum': 0.85,
-        'weight_decay': 0.015,     # weight decay per 1024 examples (decoupled from learning rate)
-        'bias_scaler': 64.0,        # scales up learning rate (but not weight decay) for BatchNorm biases
-        'label_smoothing': 0.2,
-    },
-    'aug': {
-        'flip': True,
-        'translate': 2,
-    },
-    'net': {
-        'widths': {
-            'block1': 64,
-            'block2': 256,
-            'block3': 256,
-        },
-        'scaling_factor': 1/9,
-        'tta_level': 2,         # the level of test-time augmentation: 0=none, 1=mirror, 2=mirror+translate
-    },
-}
-
 #############################################
 #                   Muon                    #
 #############################################
 
 @torch.compile
 def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
-    """
-    Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
-    quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
-    of minimizing steps, it turns out to be empirically effective to keep increasing the slope at
-    zero even beyond the point where the iteration no longer converges all the way to one everywhere
-    on the interval. This iteration therefore does not produce UV^T but rather something like US'V^T
-    where S' is diagonal with S_{ii}' ~ Uniform(0.5, 1.5), which turns out not to hurt model
-    performance at all relative to UV^T, where USV^T = G is the SVD.
-    """
     assert len(G.shape) == 2
     a, b, c = (3.4445, -4.7750,  2.0315)
     X = G.bfloat16()
@@ -179,7 +145,7 @@ eigenvectors_scaled = torch.tensor([
 ]).reshape(12, 3, 2, 2)
 
 def make_net():
-    widths = hyp['net']['widths']
+    widths = dict(block1=64, block2=256, block3=256)
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
@@ -191,7 +157,7 @@ def make_net():
         nn.MaxPool2d(3),
         Flatten(),
         nn.Linear(widths['block3'], 10, bias=False),
-        Mul(hyp['net']['scaling_factor']),
+        Mul(1/9),
     )
     net[0].weight.requires_grad = False
     net = net.half().cuda()
@@ -213,22 +179,15 @@ def reinit_net(net):
 
 def main(run, model):
 
-    batch_size = hyp['opt']['batch_size']
-    epochs = hyp['opt']['train_epochs']
-    momentum = hyp['opt']['momentum']
-    # Assuming gradients are constant in time, for Nesterov momentum, the below ratio is how much
-    # larger the default steps will be than the underlying per-example gradients. We divide the
-    # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
-    # of the choice of momentum.
-    kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
-    lr = hyp['opt']['lr'] / kilostep_scale # un-decoupled learning rate for PyTorch SGD
-    wd = hyp['opt']['weight_decay'] * batch_size / kilostep_scale
-    lr_biases = lr * hyp['opt']['bias_scaler']
+    epochs = 8
+    lr = 0.000828
+    wd = 0.00382
+    lr_biases = 64 * lr
 
-    loss_fn = nn.CrossEntropyLoss(label_smoothing=hyp['opt']['label_smoothing'], reduction='none')
+    loss_fn = nn.CrossEntropyLoss(label_smoothing=0.2, reduction='none')
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
-    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'], altflip=True)
+    train_loader = CifarLoader('cifar10', train=True, batch_size=2000, aug=dict(flip=True, translate=2), altflip=True)
     total_train_steps = epochs * len(train_loader)
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
@@ -241,8 +200,8 @@ def main(run, model):
     norm_biases = [p for n, p in raw_model.named_parameters() if 'norm' in n and p.requires_grad]
     fc_layer = raw_model[-2].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
-    optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=hyp['opt']['momentum'], nesterov=True)
-    optimizer3 = torch.optim.SGD([whiten_bias, fc_layer], lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
+    optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
+    optimizer3 = torch.optim.SGD([whiten_bias, fc_layer], lr=lr, weight_decay=wd/lr, momentum=0.85, nesterov=True)
     def get_lr(step):
         return 1 - step / total_train_steps
     optimizers = [optimizer1, optimizer2, optimizer3]
@@ -260,7 +219,7 @@ def main(run, model):
                 opt.step()
                 sched.step()
 
-    tta_val_acc = evaluate(model, test_loader, tta_level=hyp['net']['tta_level'])
+    tta_val_acc = evaluate(model, test_loader, tta_level=2)
     print('run=%s acc=%.4f' % (run, tta_val_acc))
 
     return tta_val_acc
