@@ -432,7 +432,6 @@ def main(run, model_trainbias, model_freezebias):
     param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
                      dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
-    #optimizer1 = torch.optim.SGD(filter_params, lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer1_trainbias = optimizer1
@@ -446,7 +445,6 @@ def main(run, model_trainbias, model_freezebias):
     param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
                      dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
-    #optimizer1 = torch.optim.SGD(filter_params, lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
     optimizer1_freezebias = optimizer1
     optimizer2_freezebias = optimizer2
