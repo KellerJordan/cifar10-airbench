@@ -6,6 +6,12 @@ Ideal for continuing research.
 
 Runs in ~2.8 seconds on a 400W NVIDIA A100
 Attains 94.01 mean accuracy (n=200 trials)
+
+---------
+Ablations:
+bs=1000 -> 93.87 (n=20)
+bs=1000 Muon(lr=0.12) -> 93.87 (n=15)
+bs=1000 Muon(lr=0.12, momentum=0.8) -> 93.85 (n=20)
 """
 
 #############################################
@@ -229,7 +235,7 @@ def main(run, model):
 
 if __name__ == "__main__":
     model = torch.compile(make_net(), mode='max-autotune')
-    accs = torch.tensor([main(run, model) for run in range(200)])
+    accs = torch.tensor([main(run, model) for run in range(25)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log_dir = os.path.join('logs', str(uuid.uuid4()))
