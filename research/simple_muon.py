@@ -18,7 +18,8 @@ Old current version -> 94.021 (n=300)
 ^ that and wd=0 -> 93.977 (n=150)
 ^ all that and bs=1000 -> ~93.8??
 
-^ just wd=0 for whiten_bias -> 94.007 (n=600) (new current version)
+Just wd=0 for whiten_bias -> 94.007 (n=600) (new current version)
+^ wd=0 for norm_biases -> 93.971 (n=150)
 
 Optimize norm_biases with same as optimizer3 -> 93.98 (n=400)
 ^ lr=0.12 (but still wd=wd/0.08) -> 93.96 (n=200)
