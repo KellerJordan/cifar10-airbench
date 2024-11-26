@@ -18,6 +18,8 @@ import torch.nn.functional as F
 import torchvision
 import torchvision.transforms as T
 
+from airbench import CifarLoader, evaluate
+
 torch.backends.cudnn.benchmark = True
 
 hyp = {
@@ -256,10 +258,7 @@ def main(run, model_trainbias, model_freezebias):
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'])
-    if run == 'warmup':
-        # The only purpose of the first run is to warmup the compiled model, so we can use dummy data
-        train_loader.labels = torch.randint(0, 10, size=(len(train_loader.labels),), device=train_loader.labels.device)
-    total_train_steps = len(train_loader) * epochs
+    total_train_steps = epochs * len(train_loader)
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
     reinit_net(model_trainbias)
@@ -395,7 +394,6 @@ if __name__ == "__main__":
     model_freezebias = torch.compile(model_freezebias, mode='max-autotune')
 
     print_columns(logging_columns_list, is_head=True)
-    main('warmup', model_trainbias, model_freezebias)
     accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
