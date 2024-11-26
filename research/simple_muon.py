@@ -318,7 +318,7 @@ def main(run, model_trainbias, model_freezebias):
             model = model_trainbias
             optimizers = [optimizer1_trainbias, optimizer2_trainbias, optimizer3_trainbias]
             schedulers = [scheduler1_trainbias, scheduler2_trainbias, scheduler3_trainbias]
-        elif epoch == hyp['opt']['whiten_bias_epochs']:
+        elif epoch == 3:
             model = model_freezebias
             old_optimizers = optimizers
             old_schedulers = schedulers
