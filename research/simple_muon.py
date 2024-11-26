@@ -20,11 +20,16 @@ bs=1000 SGD(wd=0) Muon(lr=0.16, momentum=0.8) -> 93.67 (n=25)
 bs=1000 SGD(wd=0) -> 93.85 (n=20)
 
 wd=0 for head -> 94.00 (n=200)
-Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head -> 94.01 (n=50), 94.00 (n=200)
+Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head -> 94.007 (n=500)
 ^ lr=0.005 -> 93.96 (n=50)
 
 Now always with Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head...
-Adam(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.96 (n=200)
+AdamW(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.94 (n=400)
+^ lr=0.02 -> 93.91 (n=100)
+^ lr=0.08 -> 93.99 (n=100)
+^ lr=0.10 -> 93.975 (n=200)
+With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> ? (n=300)
+Now with also betas=(0.85, 0.85) for head -> ? (n=300)
 """
 
 #############################################
