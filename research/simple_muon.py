@@ -29,7 +29,9 @@ AdamW(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.94 (n=400)
 ^ lr=0.08 -> 93.99 (n=100)
 ^ lr=0.10 -> 93.975 (n=200)
 With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> 94.016 (n=300)
-Now with also betas=(0.85, 0.85) for head -> 94.024 (n=150)
+Now with also betas=(0.85, 0.85) for head -> 94.019 (n=300) (use this from now on)
+
+Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> ? (n=300)
 """
 
 #############################################
