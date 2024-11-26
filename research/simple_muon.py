@@ -17,7 +17,7 @@ Old current version -> 94.007 (n=600)
 
 ^ init head to zero -> 93.895 (n=300)
 
-^ betas=(0.75, 0.75) for optim2 and optim3 -> 94.021 (n=300) [new current version]
+^ betas=(0.6, 0.6) for optim2 and optim3 -> 94.016 (n=300) [new current version]
 """
 
 #############################################
@@ -209,8 +209,8 @@ def main(run, model):
     fc_layer = raw_model[-1].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
-    optimizer3 = torch.optim.Adam([whiten_bias], lr=0.08, betas=(0.75, 0.75), fused=True)
-    optimizer4 = torch.optim.Adam([fc_layer], lr=0.0011, betas=(0.75, 0.75), fused=True)
+    optimizer3 = torch.optim.Adam([whiten_bias], lr=0.08, betas=(0.6, 0.6), fused=True)
+    optimizer4 = torch.optim.Adam([fc_layer], lr=0.0011, betas=(0.6, 0.6), fused=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
