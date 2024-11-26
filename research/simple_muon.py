@@ -17,7 +17,8 @@ Old current version -> 94.007 (n=600)
 
 ^ init head to zero -> 93.895 (n=300)
 
-^ betas=(0.6, 0.6) for optim2 and optim3 -> 94.016 (n=300) [new current version]
+Betas=(0.6, 0.6) for optim2 and optim3 -> 94.016 (n=300) [new current version]
+^ also momentum=0.6 for norm_biases -> 94.001 (n=300)
 """
 
 #############################################
