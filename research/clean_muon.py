@@ -11,7 +11,7 @@ Attains 94.02 mean accuracy (n=900 trials)
 Ablations:
 
 Current version -> 94.017 (n=900)
-^ init head to zero -> ~93.90
+^ init head to zero -> ~93.90?
 ^ momentum=0.6 for norm_biases -> 94.001 (n=300)
 ^ optimize norm_biases using optimizer3 -> 93.984 (n=300)
 ^ nesterov=False for norm_biases SGD -> 93.991 (n=600)
