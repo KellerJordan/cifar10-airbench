@@ -31,7 +31,13 @@ AdamW(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.94 (n=400)
 With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> 94.016 (n=300)
 Now with also betas=(0.85, 0.85) for head -> 94.019 (n=300) (use this from now on)
 
-Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> ? (n=300)
+Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> 93.98 (n=400)
+^ lr=0.12 (but still wd=wd/0.08) -> 93.96 (n=200)
+^ lr=0.12 wd=wd/0.12 -> 93.955 (n=200)
+^ lr=0.06 wd=wd/0.06 -> 93.984 (n=100)
+
+Current version (with Mul() removed) -> 94.021 (n=300)
+^ with Mul(1/10) instead of 1/9 -> ? (n=300)
 """
 
 #############################################
@@ -106,13 +112,6 @@ class Muon(torch.optim.Optimizer):
 class Flatten(nn.Module):
     def forward(self, x):
         return x.view(x.size(0), -1)
-
-class Mul(nn.Module):
-    def __init__(self, scale):
-        super().__init__()
-        self.scale = scale
-    def forward(self, x):
-        return x * self.scale
 
 class BatchNorm(nn.BatchNorm2d):
     def __init__(self, num_features, momentum=0.6, eps=1e-12):
@@ -190,7 +189,6 @@ def make_net():
         nn.MaxPool2d(3),
         Flatten(),
         nn.Linear(widths['block3'], 10, bias=False),
-        Mul(1/9),
     )
     net[0].weight.requires_grad = False
     net = net.half().cuda()
@@ -205,6 +203,7 @@ def reinit_net(net):
         if type(m) in (Conv, BatchNorm, nn.Linear):
             m.reset_parameters()
     net[0].weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
+    net[-1].weight.data *= 1/9
 
 ############################################
 #                Training                  #
@@ -213,9 +212,8 @@ def reinit_net(net):
 def main(run, model):
 
     epochs = 8
-    lr = 0.000828
+    lr_biases = 0.053
     wd = 0.00382
-    lr_biases = 64 * lr
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=2000, aug=dict(flip=True, translate=2), altflip=True)
@@ -228,11 +226,11 @@ def main(run, model):
     whiten_bias = raw_model[0].bias
     filter_params = [p for p in raw_model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in raw_model.named_parameters() if 'norm' in n and p.requires_grad]
-    fc_layer = raw_model[-2].weight
+    fc_layer = raw_model[-1].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
     optimizer3 = torch.optim.AdamW([whiten_bias], lr=0.08, weight_decay=wd/0.08, betas=(0.85, 0.85), fused=True)
-    optimizer4 = torch.optim.Adam([fc_layer], lr=0.01, betas=(0.85, 0.85), fused=True)
+    optimizer4 = torch.optim.Adam([fc_layer], lr=0.01/9, betas=(0.85, 0.85), fused=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
@@ -257,7 +255,7 @@ def main(run, model):
 if __name__ == "__main__":
     model = torch.compile(make_net(), mode='max-autotune')
     accs = torch.tensor([main(run, model) for run in range(200)])
-    print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
+    print('Mean: %.5f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log_dir = os.path.join('logs', str(uuid.uuid4()))
     os.makedirs(log_dir, exist_ok=True)
