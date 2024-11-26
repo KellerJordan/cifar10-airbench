@@ -39,6 +39,7 @@ Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> 93.98
 Current version (with Mul() removed) -> 94.021 (n=300)
 ^ with Mul(1/10) instead of 1/9 -> 93.997 (n=300)
 ^ with Mul(1/8) instead of 1/9 -> 94.017 (n=300)
+^ init head to zero -> 93.907 (n=150)
 """
 
 #############################################
