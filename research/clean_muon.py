@@ -11,13 +11,23 @@ Attains 94.02 mean accuracy (n=900 trials)
 Ablations:
 
 Current version -> 94.017 (n=900)
+
 ^ init head to zero -> ~93.90?
+
 ^ momentum=0.6 for norm_biases -> 94.008 (n=900)
 ^ optimize norm_biases using optimizer3 -> 93.984 (n=300)
 ^ nesterov=False for norm_biases SGD -> 93.991 (n=600)
 ^ artificial Adam for whiten_bias and head -> 94.014 (n=300)
 ^ artificial Adam with nesterov momentum -> 94.013 (n=300)
 ^ nesterov=False in Muon -> 93.733 (n=300)
+
+^ bs=1000 -> 93.84 (n=100)
+^ bs=1000 beta=0.8 lr=0.5x -> 93.89 (n=50)
+^ bs=1000 beta=0.6 lr=0.5x -> 93.885 (n=100)
+^ bs=1000 beta=0.8 -> 93.22 (n=50)
+^ bs=1000 beta=0.7 lr=0.5x -> 93.95 (n=100)
+^ bs=1000 beta=0.7 lr=0.7x -> 93.91 (n=90)
+
 """
 
 #############################################
