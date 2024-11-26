@@ -257,7 +257,7 @@ def main(run, model_trainbias, model_freezebias):
     loss_fn = nn.CrossEntropyLoss(label_smoothing=hyp['opt']['label_smoothing'], reduction='none')
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
-    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'])
+    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=hyp['aug'], altflip=True)
     total_train_steps = epochs * len(train_loader)
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
