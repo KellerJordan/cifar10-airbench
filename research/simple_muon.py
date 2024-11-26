@@ -10,36 +10,13 @@ Attains 94.01 mean accuracy (n=200 trials)
 ---------
 Ablations:
 
-bs=1000 -> 93.87 (n=20)
-bs=1000 Muon(lr=0.12) -> 93.87 (n=15)
-bs=1000 Muon(lr=0.12, momentum=0.8) -> 93.85 (n=20)
-
-SGD(wd=0) -> 93.95 (n=100)
-bs=1000 SGD(wd=0, lr=1.5x) Muon(lr=0.16, momentum=0.8) -> 93.71 (n=25)
-bs=1000 SGD(wd=0) Muon(lr=0.16, momentum=0.8) -> 93.67 (n=25)
-bs=1000 SGD(wd=0) -> 93.85 (n=20)
-
-wd=0 for head -> 94.00 (n=200)
-Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head -> 94.007 (n=500)
-^ lr=0.005 -> 93.96 (n=50)
-
-Now always with Adam(lr=0.01, betas=(0.85, 0.95), wd=0) for head...
-AdamW(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.94 (n=400)
-^ lr=0.02 -> 93.91 (n=100)
-^ lr=0.08 -> 93.99 (n=100)
-^ lr=0.10 -> 93.975 (n=200)
-With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> 94.016 (n=300)
-Now with also betas=(0.85, 0.85) for head -> 94.019 (n=300) (use this from now on)
+Current version -> 94.021 (n=300)
+^ init head to zero -> 93.907 (n=150)
 
 Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> 93.98 (n=400)
 ^ lr=0.12 (but still wd=wd/0.08) -> 93.96 (n=200)
 ^ lr=0.12 wd=wd/0.12 -> 93.955 (n=200)
 ^ lr=0.06 wd=wd/0.06 -> 93.984 (n=100)
-
-Current version (with Mul() removed) -> 94.021 (n=300)
-^ with Mul(1/10) instead of 1/9 -> 93.997 (n=300)
-^ with Mul(1/8) instead of 1/9 -> 94.017 (n=300)
-^ init head to zero -> 93.907 (n=150)
 """
 
 #############################################
