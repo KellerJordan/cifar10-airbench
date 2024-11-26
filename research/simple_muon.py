@@ -13,7 +13,7 @@ Ablations:
 Current -> 94.007 (n=600)
 
 ^ wd=0 for norm_biases -> 93.971 (n=150)
-^ optimize norm_biases with optimizer3 -> ? (n=300)
+^ optimize norm_biases with optimizer3 -> 93.967 (n=300)
 
 ^ init head to zero -> 93.907 (n=150)
 """
