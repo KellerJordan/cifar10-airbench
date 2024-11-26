@@ -46,7 +46,7 @@ hyp = {
 }
 
 #############################################
-#           Spectral SGD-momentum           #
+#                   Muon                    #
 #############################################
 
 @torch.compile
@@ -157,7 +157,6 @@ class ConvGroup(nn.Module):
 
 def make_net():
     widths = hyp['net']['widths']
-    batchnorm_momentum = hyp['net']['batchnorm_momentum']
     whiten_kernel_size = 2
     whiten_width = 2 * 3 * whiten_kernel_size**2
     net = nn.Sequential(
@@ -260,7 +259,7 @@ def main(run, model_trainbias, model_freezebias):
     if run == 'warmup':
         # The only purpose of the first run is to warmup the compiled model, so we can use dummy data
         train_loader.labels = torch.randint(0, 10, size=(len(train_loader.labels),), device=train_loader.labels.device)
-    total_train_steps = ceil(len(train_loader) * epochs)
+    total_train_steps = len(train_loader) * epochs
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
     reinit_net(model_trainbias)
@@ -313,7 +312,7 @@ def main(run, model_trainbias, model_freezebias):
     torch.cuda.synchronize()
     total_time_seconds += 1e-3 * starter.elapsed_time(ender)
 
-    for epoch in range(ceil(epochs)):
+    for epoch in range(epochs):
 
         # After training the whiten bias for some epochs, swap in the compiled model with frozen bias
         if epoch == 0:
