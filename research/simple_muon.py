@@ -18,6 +18,8 @@ SGD(wd=0) -> 93.95 (n=100)
 bs=1000 SGD(wd=0, lr=1.5x) Muon(lr=0.16, momentum=0.8) -> 93.71 (n=25)
 bs=1000 SGD(wd=0) Muon(lr=0.16, momentum=0.8) -> 93.67 (n=25)
 bs=1000 SGD(wd=0) -> 93.85 (n=20)
+
+wd=0 for head -> 94.00 (n=200)
 """
 
 #############################################
@@ -217,11 +219,12 @@ def main(run, model):
     fc_layer = raw_model[-2].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
-    optimizer3 = torch.optim.SGD([whiten_bias, fc_layer], lr=lr, weight_decay=wd/lr, momentum=0.85, nesterov=True)
+    optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=0.85, nesterov=True)
+    optimizer4 = torch.optim.SGD([fc_layer], lr=lr, momentum=0.85, nesterov=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
-    optimizers = [optimizer1, optimizer2, optimizer3]
+    optimizers = [optimizer1, optimizer2, optimizer3, optimizer4]
     schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for opt in optimizers]
 
     model.train()
@@ -241,7 +244,7 @@ def main(run, model):
 
 if __name__ == "__main__":
     model = torch.compile(make_net(), mode='max-autotune')
-    accs = torch.tensor([main(run, model) for run in range(20)])
+    accs = torch.tensor([main(run, model) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log_dir = os.path.join('logs', str(uuid.uuid4()))
