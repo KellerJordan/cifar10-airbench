@@ -2,6 +2,8 @@
 Variant of airbench94_muon which removes the whiten freezing
 and uses the `airbench` dependency.
 
+Ideal for continuing research.
+
 Runs in ~2.8 seconds on a 400W NVIDIA A100
 Attains 94.01 mean accuracy (n=200 trials)
 """
