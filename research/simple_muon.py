@@ -11,9 +11,16 @@ Attains 94.01 mean accuracy (n=200 trials)
 Ablations:
 
 Current version -> 94.021 (n=300)
+
 ^ init head to zero -> 93.907 (n=150)
 
-Now with AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for norm biases -> 93.98 (n=400)
+^ put norm_biases into optimizer3 -> 93.95 (n=150)
+^ that and wd=0 -> 93.977 (n=150)
+^ all that and bs=1000 -> ~93.8??
+
+^ just wd=0 for whiten_bias -> 94.007 (n=600)
+
+Optimize norm_biases with same as optimizer3 -> 93.98 (n=400)
 ^ lr=0.12 (but still wd=wd/0.08) -> 93.96 (n=200)
 ^ lr=0.12 wd=wd/0.12 -> 93.955 (n=200)
 ^ lr=0.06 wd=wd/0.06 -> 93.984 (n=100)
@@ -208,7 +215,7 @@ def main(run, model):
     fc_layer = raw_model[-1].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
-    optimizer3 = torch.optim.AdamW([whiten_bias], lr=0.08, weight_decay=wd/0.08, betas=(0.85, 0.85), fused=True)
+    optimizer3 = torch.optim.Adam([whiten_bias], lr=0.08, betas=(0.85, 0.85), fused=True)
     optimizer4 = torch.optim.Adam([fc_layer], lr=0.0011, betas=(0.85, 0.85), fused=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
