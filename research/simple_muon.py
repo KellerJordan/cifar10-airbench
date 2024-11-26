@@ -11,14 +11,11 @@ Attains 94.01 mean accuracy (n=200 trials)
 Ablations:
 
 Old current version (betas=(0.85, 0.85) for optim2 and optim3) -> 94.007 (n=600)
-
-^ wd=0 for norm_biases -> 93.971 (n=150)
-^ optimize norm_biases with optimizer3 -> 93.967 (n=300)
-
 ^ init head to zero -> 93.895 (n=300)
 
 New current version -> 94.017 (n=900)
-^ also momentum=0.6 for norm_biases -> 94.001 (n=300)
+^ momentum=0.6 for norm_biases -> 94.001 (n=300)
+^ optimize norm_biases using optimizer3 -> 93.984 (n=300)
 """
 
 #############################################
