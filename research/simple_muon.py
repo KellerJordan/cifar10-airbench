@@ -1,4 +1,7 @@
 """
+Variant of airbench94_muon which removes the whiten freezing
+and uses the `airbench` dependency.
+
 Runs in ~2.8 seconds on a 400W NVIDIA A100
 Attains 94.01 mean accuracy (n=200 trials)
 """
@@ -9,6 +12,8 @@ Attains 94.01 mean accuracy (n=200 trials)
 
 import os
 import sys
+with open(sys.argv[0]) as f:
+    code = f.read()
 import uuid
 
 import torch
@@ -151,7 +156,7 @@ def make_net():
     net = nn.Sequential(
         Conv(3, whiten_width, whiten_kernel_size, padding=0, bias=True),
         nn.GELU(),
-        ConvGroup(whiten_width,     widths['block1']),
+        ConvGroup(whiten_width, widths['block1']),
         ConvGroup(widths['block1'], widths['block2']),
         ConvGroup(widths['block2'], widths['block3']),
         nn.MaxPool2d(3),
@@ -184,14 +189,11 @@ def main(run, model):
     wd = 0.00382
     lr_biases = 64 * lr
 
-    loss_fn = nn.CrossEntropyLoss(label_smoothing=0.2, reduction='none')
-
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=2000, aug=dict(flip=True, translate=2), altflip=True)
-    total_train_steps = epochs * len(train_loader)
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
-    raw_model = model._orig_mod
+    raw_model = (model._orig_mod if hasattr(model, '_orig_mod') else model)
     reinit_net(raw_model)
 
     # Create optimizers for train whiten bias stage
@@ -203,16 +205,16 @@ def main(run, model):
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
     optimizer3 = torch.optim.SGD([whiten_bias, fc_layer], lr=lr, weight_decay=wd/lr, momentum=0.85, nesterov=True)
     def get_lr(step):
+        total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
     optimizers = [optimizer1, optimizer2, optimizer3]
     schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for opt in optimizers]
 
+    model.train()
     for epoch in range(epochs):
-
-        model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs)
-            loss = loss_fn(outputs, labels).sum()
+            loss = F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction='none').sum()
             model.zero_grad(set_to_none=True)
             loss.backward()
             for opt, sched in zip(optimizers, schedulers):
@@ -221,23 +223,16 @@ def main(run, model):
 
     tta_val_acc = evaluate(model, test_loader, tta_level=2)
     print('run=%s acc=%.4f' % (run, tta_val_acc))
-
     return tta_val_acc
 
 if __name__ == "__main__":
-    with open(sys.argv[0]) as f:
-        code = f.read()
-
-    model = make_net()
-    model = torch.compile(model, mode='max-autotune')
-
+    model = torch.compile(make_net(), mode='max-autotune')
     accs = torch.tensor([main(run, model) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
-    log = {'code': code, 'accs': accs}
     log_dir = os.path.join('logs', str(uuid.uuid4()))
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, 'log.pt')
+    torch.save(dict(code=code, accs=accs), os.path.join(log_dir, 'log.pt'))
     print(os.path.abspath(log_path))
-    torch.save(log, os.path.join(log_dir, 'log.pt'))
 
