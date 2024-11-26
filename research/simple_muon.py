@@ -1,6 +1,6 @@
 """
-Runs in ?? seconds on a 400W NVIDIA A100
-Attains ?? mean accuracy (n=200 trials)
+Runs in ~2.8 seconds on a 400W NVIDIA A100
+Attains 94.01 mean accuracy (n=200 trials)
 """
 
 #############################################
