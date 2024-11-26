@@ -10,21 +10,12 @@ Attains 94.01 mean accuracy (n=200 trials)
 ---------
 Ablations:
 
-Old current version -> 94.021 (n=300)
+Current -> 94.007 (n=600)
+
+^ wd=0 for norm_biases -> 93.971 (n=150)
+^ optimize norm_biases with optimizer3 -> ? (n=300)
 
 ^ init head to zero -> 93.907 (n=150)
-
-^ put norm_biases into optimizer3 -> 93.95 (n=150)
-^ that and wd=0 -> 93.977 (n=150)
-^ all that and bs=1000 -> ~93.8??
-
-Just wd=0 for whiten_bias -> 94.007 (n=600) (new current version)
-^ wd=0 for norm_biases -> 93.971 (n=150)
-
-Optimize norm_biases with same as optimizer3 -> 93.98 (n=400)
-^ lr=0.12 (but still wd=wd/0.08) -> 93.96 (n=200)
-^ lr=0.12 wd=wd/0.12 -> 93.955 (n=200)
-^ lr=0.06 wd=wd/0.06 -> 93.984 (n=100)
 """
 
 #############################################
