@@ -28,8 +28,8 @@ AdamW(lr=0.04 betas=(0.85, 0.95), wd=wd/0.04) for biases -> 93.94 (n=400)
 ^ lr=0.02 -> 93.91 (n=100)
 ^ lr=0.08 -> 93.99 (n=100)
 ^ lr=0.10 -> 93.975 (n=200)
-With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> ? (n=300)
-Now with also betas=(0.85, 0.85) for head -> ? (n=300)
+With just AdamW(lr=0.08, betas=(0.85, 0.85), wd=wd/0.08) for whiten bias -> 94.016 (n=300)
+Now with also betas=(0.85, 0.85) for head -> 94.024 (n=150)
 """
 
 #############################################
@@ -229,8 +229,8 @@ def main(run, model):
     fc_layer = raw_model[-2].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
-    optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=0.85, nesterov=True)
-    optimizer4 = torch.optim.Adam([fc_layer], lr=0.01, betas=(0.85, 0.95), fused=True)
+    optimizer3 = torch.optim.AdamW([whiten_bias], lr=0.08, weight_decay=wd/0.08, betas=(0.85, 0.85), fused=True)
+    optimizer4 = torch.optim.Adam([fc_layer], lr=0.01, betas=(0.85, 0.85), fused=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
