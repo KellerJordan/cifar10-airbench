@@ -232,7 +232,7 @@ def main(run, model):
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
     optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=0.85, nesterov=True)
     optimizer3 = torch.optim.AdamW([whiten_bias], lr=0.08, weight_decay=wd/0.08, betas=(0.85, 0.85), fused=True)
-    optimizer4 = torch.optim.Adam([fc_layer], lr=0.01/9, betas=(0.85, 0.85), fused=True)
+    optimizer4 = torch.optim.Adam([fc_layer], lr=0.0011, betas=(0.85, 0.85), fused=True)
     def get_lr(step):
         total_train_steps = epochs * len(train_loader)
         return 1 - step / total_train_steps
