@@ -10,7 +10,6 @@ Attains ?? mean accuracy (n=200 trials)
 import os
 import sys
 import uuid
-from math import ceil
 
 import torch
 from torch import nn
@@ -180,10 +179,12 @@ def make_net():
             mod.float()
     return net
 
-def reinit_net(model):
+def reinit_net(model, train_loader):
     for m in model.modules():
         if type(m) in (Conv, BatchNorm, nn.Linear):
             m.reset_parameters()
+    train_images = train_loader.normalize(train_loader.images[:5000])
+    init_whitening_conv(model[0], train_images)
 
 #############################################
 #       Whitening Conv Initialization       #
@@ -240,7 +241,7 @@ def print_training_details(variables, is_final_entry):
 #                Training                  #
 ############################################
 
-def main(run, model_trainbias, model_freezebias):
+def main(run, model):
 
     batch_size = hyp['opt']['batch_size']
     epochs = hyp['opt']['train_epochs']
@@ -261,73 +262,28 @@ def main(run, model_trainbias, model_freezebias):
     total_train_steps = epochs * len(train_loader)
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
-    reinit_net(model_trainbias)
-    current_steps = 0
+    raw_model = model._orig_mod
+    reinit_net(raw_model, train_loader)
 
     # Create optimizers for train whiten bias stage
-    model = model_trainbias
-    filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
-    norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    whiten_bias = model._orig_mod[0].bias
-    fc_layer = model._orig_mod[-2].weight
-    param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
-                     dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
+    whiten_bias = raw_model[0].bias
+    filter_params = [p for p in raw_model.parameters() if len(p.shape) == 4 and p.requires_grad]
+    norm_biases = [p for n, p in raw_model.named_parameters() if 'norm' in n and p.requires_grad]
+    fc_layer = raw_model[-2].weight
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
-    optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
-    optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
-    optimizer1_trainbias = optimizer1
-    optimizer2_trainbias = optimizer2
-    optimizer3_trainbias = optimizer3
-    # Create optimizers for frozen whiten bias stage
-    model = model_freezebias
-    filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
-    norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    fc_layer = model._orig_mod[-2].weight
-    param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
-                     dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
-    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6)
-    optimizer2 = torch.optim.SGD(param_configs, momentum=hyp['opt']['momentum'], nesterov=True)
-    optimizer1_freezebias = optimizer1
-    optimizer2_freezebias = optimizer2
-    # Make learning rate schedulers for all 5 optimizers
+    optimizer2 = torch.optim.SGD(norm_biases, lr=lr_biases, weight_decay=wd/lr_biases, momentum=hyp['opt']['momentum'], nesterov=True)
+    optimizer3 = torch.optim.SGD([whiten_bias, fc_layer], lr=lr, weight_decay=wd/lr, momentum=hyp['opt']['momentum'], nesterov=True)
     def get_lr(step):
         return 1 - step / total_train_steps
-    scheduler1_trainbias = torch.optim.lr_scheduler.LambdaLR(optimizer1_trainbias, get_lr)
-    scheduler2_trainbias = torch.optim.lr_scheduler.LambdaLR(optimizer2_trainbias, get_lr)
-    scheduler3_trainbias = torch.optim.lr_scheduler.LambdaLR(optimizer3_trainbias, get_lr)
-    scheduler1_freezebias = torch.optim.lr_scheduler.LambdaLR(optimizer1_freezebias, get_lr)
-    scheduler2_freezebias = torch.optim.lr_scheduler.LambdaLR(optimizer2_freezebias, get_lr)
+    optimizers = [optimizer1, optimizer2, optimizer3]
+    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for opt in optimizers]
 
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
     ender = torch.cuda.Event(enable_timing=True)
     total_time_seconds = 0.0
 
-    # Initialize the whitening layer using training images
-    starter.record()
-    train_images = train_loader.normalize(train_loader.images[:5000])
-    init_whitening_conv(model_trainbias._orig_mod[0], train_images)
-    ender.record()
-    torch.cuda.synchronize()
-    total_time_seconds += 1e-3 * starter.elapsed_time(ender)
-
     for epoch in range(epochs):
-
-        # After training the whiten bias for some epochs, swap in the compiled model with frozen bias
-        if epoch == 0:
-            model = model_trainbias
-            optimizers = [optimizer1_trainbias, optimizer2_trainbias, optimizer3_trainbias]
-            schedulers = [scheduler1_trainbias, scheduler2_trainbias, scheduler3_trainbias]
-        elif epoch == 3:
-            model = model_freezebias
-            old_optimizers = optimizers
-            old_schedulers = schedulers
-            optimizers = [optimizer1_freezebias, optimizer2_freezebias]
-            schedulers = [scheduler1_freezebias, scheduler2_freezebias]
-            model.load_state_dict(model_trainbias.state_dict())
-            for i, (opt, sched) in enumerate(zip(optimizers, schedulers)):
-                opt.load_state_dict(old_optimizers[i].state_dict())
-                sched.load_state_dict(old_schedulers[i].state_dict())
 
         ####################
         #     Training     #
@@ -344,9 +300,6 @@ def main(run, model_trainbias, model_freezebias):
             for opt, sched in zip(optimizers, schedulers):
                 opt.step()
                 sched.step()
-            current_steps += 1
-            if current_steps >= total_train_steps:
-                break
 
         ender.record()
         torch.cuda.synchronize()
@@ -382,19 +335,11 @@ if __name__ == "__main__":
     with open(sys.argv[0]) as f:
         code = f.read()
 
-    # These two compiled models are first warmed up, and then reinitialized every run. No learned
-    # weights are reused between runs. To implement freezing of the whitening-layer bias parameter
-    # midway through training, we use two compiled models, one with trainable and the other with
-    # frozen whitening bias. This is faster than the naive approach of setting requires_grad=False
-    # on the whitening bias midway through training on a single compiled model.
-    model_trainbias = make_net()
-    model_freezebias = make_net()
-    model_freezebias[0].bias.requires_grad = False
-    model_trainbias = torch.compile(model_trainbias, mode='max-autotune')
-    model_freezebias = torch.compile(model_freezebias, mode='max-autotune')
+    model = make_net()
+    model = torch.compile(model, mode='max-autotune')
 
     print_columns(logging_columns_list, is_head=True)
-    accs = torch.tensor([main(run, model_trainbias, model_freezebias) for run in range(200)])
+    accs = torch.tensor([main(run, model) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
     log = {'code': code, 'accs': accs}
