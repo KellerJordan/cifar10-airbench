@@ -11,7 +11,7 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 
 | Baseline | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| Standard ResNet-18 training | 96% | 7min | 32.3 |
+| Standard ResNet-18 training | 96.0% | 7min | 32.3 |
 
 ---
 
