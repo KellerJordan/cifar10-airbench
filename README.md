@@ -4,7 +4,7 @@ This repo contains the two fastest known algorithms for training a neural networ
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| `airbench94_muon.py` | 94.01% | 2.59s | 0.29 |
+| [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
 | `airbench96_faster.py` | 96.00% | 27.3s | 3.1 |
 
 Each of these record-holding scripts is fully self-contained and doesn't depend on anything else in the repo.
