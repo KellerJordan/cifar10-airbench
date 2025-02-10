@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-This repo is the home of the current fastest known algorithms for training a neural network to 94% accuracy on CIFAR-10 using an NVIDIA A100 GPU. (And also the fastest algorithm for 96%.)
+This repo is the home of the currently fastest known two algorithms for training a neural network to 94% and 96% accuracy on CIFAR-10 using an NVIDIA A100 GPU.
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
