@@ -5,7 +5,7 @@ This repo contains the two fastest known algorithms for training a neural networ
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
 | [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
-| `airbench96_faster.py` | 96.00% | 27.3s | 3.1 |
+| [airbench96_faster.py](airbench96_faster.py) | 96.00% | 27.3s | 3.1 |
 
 Each of these record-holding scripts is fully self-contained and doesn't depend on anything else in the repo.
 
@@ -19,15 +19,15 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
-In addition, `airbench94_muon.py` uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and `airbench96_faster.py` uses a form of data filtering. These are both new records since the paper.
+In addition, [airbench94_muon.py](airbench94_muon.py) uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and [airbench96_faster.py](airbench96_faster.py) uses a form of data filtering. These are both new records since the paper.
 We have preserved the old records from the paper in this repo as well, which are as follows:
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| `airbench94_compiled.py` | 94.01% | 3.09s | 0.36 |
-| `airbench94.py` | 94.01% | 3.83s | 0.36 |
-| `airbench95.py` | 95.01% | 10.4s | 1.4 |
-| `airbench96.py` | 96.03% | 34.7s | 4.9 |
+| [airbench94_compiled.py](airbench94_compiled.py) | 94.01% | 3.09s | 0.36 |
+| [airbench94.py](airbench94.py) | 94.01% | 3.83s | 0.36 |
+| [airbench95.py](airbench95.py) | 95.01% | 10.4s | 1.4 |
+| [airbench96.py](airbench96.py) | 96.03% | 34.7s | 4.9 |
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
