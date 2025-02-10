@@ -17,6 +17,8 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
+In addition, `airbench94_muon.py` uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and `airbench96_faster.py` uses a form of data filtering. These are both new records since the paper.
+
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
 
