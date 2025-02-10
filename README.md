@@ -6,7 +6,6 @@ A collection of fast and self-contained training scripts for CIFAR-10.
 | - | - | - | - |
 | `airbench94_muon.py` | 94.01% | 2.59s | 0.29 |
 | `airbench96_faster.py` | 96.00% | 27.3s | 3.1 |
-| - | - | - | - |
 | `airbench94_compiled.py` | 94.01% | 3.09s | 0.36 |
 | `airbench94.py` | 94.01% | 3.83s | 0.36 |
 | `airbench95.py` | 95.01% | 10.4s | 1.4 |
