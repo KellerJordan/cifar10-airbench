@@ -371,8 +371,6 @@ def main(run, model):
     lr = 6.5 / kilostep_scale # un-decoupled learning rate for PyTorch SGD
     wd = 0.015 * batch_size / kilostep_scale
 
-    loss_fn = nn.CrossEntropyLoss(label_smoothing=0.2, reduction='none')
-
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
     if run == 'warmup':
@@ -382,10 +380,10 @@ def main(run, model):
 
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
+    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
     param_configs = [dict(params=norm_biases, lr=(lr*64), weight_decay=wd/(lr*64)),
                      dict(params=[model.head.weight], lr=(lr/81), weight_decay=wd/(lr/81))]
-    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
     optimizers = [optimizer1, optimizer2, optimizer3]
@@ -428,12 +426,11 @@ def main(run, model):
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, nograd_whitenbias=(epoch >= whiten_bias_epochs))
-            loss = loss_fn(outputs, labels).sum()
-            model.zero_grad(set_to_none=True)
-            loss.backward()
+            F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction='sum').backward()
             for opt, sched in zip(optimizers, schedulers):
                 opt.step()
                 sched.step()
+            model.zero_grad(set_to_none=True)
             current_steps += 1
             if current_steps >= total_train_steps:
                 break
