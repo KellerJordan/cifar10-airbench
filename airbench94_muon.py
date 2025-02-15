@@ -264,7 +264,7 @@ class CifarNet(nn.Module):
 
     def reset(self):
         for m in model.modules():
-            if type(m) in (Conv, BatchNorm, nn.Linear):
+            if type(m) in (nn.Conv2d, Conv, BatchNorm, nn.Linear):
                 m.reset_parameters()
         self.head.weight.data *= 1/9
 
@@ -366,8 +366,8 @@ def main(run, model):
     # of the choice of momentum.
     m_scale = (1 + 1 / (1 - momentum))
     batch_size = 2000
-    lr = (6.5 / 1024) / m_scale # un-decoupled learning rate for PyTorch SGD
-    wd = (0.015 / 1024) * batch_size / m_scale
+    lr = 0.406 / m_scale # un-decoupled learning rate for PyTorch SGD
+    wd = 1.5e-5 * batch_size / m_scale
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
@@ -380,14 +380,16 @@ def main(run, model):
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    param_configs = [dict(params=norm_biases, lr=(lr*64), weight_decay=wd/(lr*64)),
-                     dict(params=[model.head.weight], lr=(lr/81), weight_decay=wd/(lr/81))]
+    param_configs = [dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
+                     dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))]
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
     optimizers = [optimizer1, optimizer2, optimizer3]
-    def get_lr(step):
+    def get_lr12(step):
         return 1 - step / total_train_steps
-    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for opt in optimizers]
+    def get_lr3(step):
+        return 1 - step / (len(train_loader) * whiten_bias_epochs)
+    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for (opt, get_lr) in zip(optimizers, [get_lr12, get_lr12, get_lr3])]
 
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
