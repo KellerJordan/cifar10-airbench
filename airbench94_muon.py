@@ -187,13 +187,11 @@ class BatchNorm(nn.BatchNorm2d):
         # Note that PyTorch already initializes the weights to one and bias to zero
 
 class Conv(nn.Conv2d):
-    def __init__(self, in_channels, out_channels, kernel_size=3, padding='same', bias=False):
-        super().__init__(in_channels, out_channels, kernel_size=kernel_size, padding=padding, bias=bias)
+    def __init__(self, in_channels, out_channels):
+        super().__init__(in_channels, out_channels, kernel_size=3, padding='same', bias=False)
 
     def reset_parameters(self):
         super().reset_parameters()
-        if self.bias is not None:
-            self.bias.data.zero_()
         w = self.weight.data
         torch.nn.init.dirac_(w[:w.size(1)])
 
