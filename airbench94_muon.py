@@ -178,17 +178,6 @@ class CifarLoader:
 #            Network Components             #
 #############################################
 
-class Flatten(nn.Module):
-    def forward(self, x):
-        return x.view(x.size(0), -1)
-
-class Mul(nn.Module):
-    def __init__(self, scale):
-        super().__init__()
-        self.scale = scale
-    def forward(self, x):
-        return x * self.scale
-
 # note the use of low BatchNorm stats momentum
 class BatchNorm(nn.BatchNorm2d):
     def __init__(self, num_features, momentum=0.6, eps=1e-12):
@@ -266,10 +255,8 @@ class CifarNet(nn.Module):
             ConvGroup(widths['block1'], widths['block2']),
             ConvGroup(widths['block2'], widths['block3']),
             nn.MaxPool2d(3),
-            Flatten(),
-            nn.Linear(widths['block3'], 10, bias=False),
-            Mul(1/9),
         )
+        self.head = nn.Linear(widths['block3'], 10, bias=False)
         for mod in self.modules():
             if isinstance(mod, BatchNorm):
                 mod.float()
@@ -280,6 +267,7 @@ class CifarNet(nn.Module):
         for m in model.modules():
             if type(m) in (Conv, BatchNorm, nn.Linear):
                 m.reset_parameters()
+        self.head.weight.data *= 1/9
 
     def init_whiten(self, train_images):
         init_whitening_conv(self.whiten, train_images)
@@ -287,7 +275,9 @@ class CifarNet(nn.Module):
     def forward(self, x, nograd_whitenbias=False):
         b = self.whiten.bias
         x = F.conv2d(x, self.whiten.weight, b.detach() if nograd_whitenbias else b)
-        return self.layers(x)
+        x = self.layers(x)
+        x = x.view(len(x), -1)
+        return self.head(x)
 
 ############################################
 #                 Logging                  #
@@ -394,9 +384,9 @@ def main(run, model):
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
     whiten_bias = model._orig_mod.whiten.bias
-    fc_layer = model._orig_mod.layers[-2].weight
+    fc_layer = model._orig_mod.head.weight
     param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
-                     dict(params=[fc_layer], lr=lr, weight_decay=wd/lr)]
+                     dict(params=[fc_layer], lr=lr/81, weight_decay=wd/(lr/81))]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
