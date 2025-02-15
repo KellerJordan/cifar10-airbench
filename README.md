@@ -15,7 +15,16 @@ For a comparison, the standard training used in most studies on CIFAR-10 is much
 | - | - | - | - |
 | Standard ResNet-18 training | 96.0% | 7min | 32.3 |
 
----
+## Quickstart
+
+The "94% on CIFAR-10" speedrun record can be run via:
+```
+git clone https://github.com/KellerJordan/cifar10-airbench.git
+cd airbench
+python airbench94_muon.py
+```
+
+## Methods
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
@@ -31,24 +40,6 @@ We have preserved the old records from the paper in this repo as well, which are
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
-
-## How to run
-
-To train a neural network with 94% accuracy, run either
-
-```
-git clone https://github.com/KellerJordan/cifar10-airbench.git
-cd airbench && python airbench94.py
-```
-
-or
-
-```
-pip install airbench
-python -c "import airbench; airbench.warmup94(); airbench.train94()"
-```
-
-Note: `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. The former is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
 
 ## Motivation
 
