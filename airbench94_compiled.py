@@ -424,6 +424,7 @@ def main(run, model_trainbias, model_freezebias):
 
     # Reinitialize the network from scratch - nothing is reused from previous runs besides the PyTorch compilation
     reinit_net(model_trainbias)
+    reinit_net(model_freezebias)
     current_steps = 0
 
     norm_biases = [p for k, p in model_trainbias.named_parameters() if 'norm' in k]
