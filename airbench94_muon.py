@@ -383,13 +383,11 @@ def main(run, model):
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    whiten_bias = model.whiten.bias
-    fc_layer = model.head.weight
     param_configs = [dict(params=norm_biases, lr=(lr*64), weight_decay=wd/(lr*64)),
-                     dict(params=[fc_layer], lr=(lr/81), weight_decay=wd/(lr/81))]
+                     dict(params=[model.head.weight], lr=(lr/81), weight_decay=wd/(lr/81))]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
-    optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
+    optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
     optimizers = [optimizer1, optimizer2, optimizer3]
     def get_lr(step):
         return 1 - step / total_train_steps
