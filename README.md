@@ -15,7 +15,7 @@ For comparison, the standard training used in most studies on CIFAR-10 is much s
 
 ## Quickstart
 
-The "94% on CIFAR-10" speedrun record can be run via:
+The current speedrun record for 94% on CIFAR-10 can be run via:
 ```
 git clone https://github.com/KellerJordan/cifar10-airbench.git
 cd airbench
