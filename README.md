@@ -7,9 +7,7 @@ This repo contains the two fastest known algorithms for training a neural networ
 | [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
 | [airbench96_faster.py](airbench96_faster.py) | 96.00% | 27.3s | 3.1 |
 
-Each of these record-holding scripts is fully self-contained and doesn't depend on anything else in the repo.
-
-For a comparison, the standard training used in most studies on CIFAR-10 is much slower:
+For comparison, the standard training used in most studies on CIFAR-10 is much slower:
 
 | Baseline | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
