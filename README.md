@@ -7,20 +7,27 @@ This repo contains the two fastest known algorithms for training a neural networ
 | [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
 | [airbench96_faster.py](airbench96_faster.py) | 96.00% | 27.3s | 3.1 |
 
-Each of these record-holding scripts is fully self-contained and doesn't depend on anything else in the repo.
-
-For a comparison, the standard training used in most studies on CIFAR-10 is much slower:
+For comparison, the standard training used in most studies on CIFAR-10 is much slower:
 
 | Baseline | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
 | Standard ResNet-18 training | 96.0% | 7min | 32.3 |
 
----
+## Quickstart
+
+The current speedrun record for 94% on CIFAR-10 can be run via:
+```
+git clone https://github.com/KellerJordan/cifar10-airbench.git
+cd airbench
+python airbench94_muon.py
+```
+
+## Methods
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
 In addition, [airbench94_muon.py](airbench94_muon.py) uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and [airbench96_faster.py](airbench96_faster.py) uses a form of data filtering. These are both new records since the paper.
-We have preserved the old records from the paper in this repo as well, which are as follows:
+We have preserved the old records from the paper in this repo:
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
@@ -31,24 +38,6 @@ We have preserved the old records from the paper in this repo as well, which are
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
-
-## How to run
-
-To train a neural network with 94% accuracy, run either
-
-```
-git clone https://github.com/KellerJordan/cifar10-airbench.git
-cd airbench && python airbench94.py
-```
-
-or
-
-```
-pip install airbench
-python -c "import airbench; airbench.warmup94(); airbench.train94()"
-```
-
-Note: `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield the same distribution of trained networks), and differ only in that the first uses `torch.compile` to improve GPU utilization. The former is intended for experiments where many networks are trained at once in order to amortize the one-time compilation cost.
 
 ## Motivation
 
