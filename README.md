@@ -7,6 +7,8 @@ This repo contains the two fastest known algorithms for training a neural networ
 | [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
 | [airbench96_faster.py](airbench96_faster.py) | 96.00% | 27.3s | 3.1 |
 
+(Timings done using `torch==2.4.1` on a 400W NVIDIA A100)
+
 For comparison, the standard training used in most studies on CIFAR-10 is much slower:
 
 | Baseline | Mean accuracy | Time | PFLOPs |
