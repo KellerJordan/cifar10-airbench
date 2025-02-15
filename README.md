@@ -22,6 +22,8 @@ cd airbench
 python airbench94_muon.py
 ```
 
+(requires `torch` and `torchvision` to be installed)
+
 ## Methods
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
