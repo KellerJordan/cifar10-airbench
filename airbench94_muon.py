@@ -358,7 +358,6 @@ def evaluate(model, loader, tta_level=0):
 
 def main(run, model):
 
-    batch_size = 2000
     epochs = 8
     whiten_bias_epochs = 3
     momentum = 0.85
@@ -367,9 +366,9 @@ def main(run, model):
     # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
     # of the choice of momentum.
     kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
+    batch_size = 2000
     lr = 6.5 / kilostep_scale # un-decoupled learning rate for PyTorch SGD
     wd = 0.015 * batch_size / kilostep_scale
-    lr_biases = lr * 64
 
     loss_fn = nn.CrossEntropyLoss(label_smoothing=0.2, reduction='none')
 
@@ -383,10 +382,10 @@ def main(run, model):
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    whiten_bias = model._orig_mod.whiten.bias
-    fc_layer = model._orig_mod.head.weight
-    param_configs = [dict(params=norm_biases, lr=lr_biases, weight_decay=wd/lr_biases),
-                     dict(params=[fc_layer], lr=lr/81, weight_decay=wd/(lr/81))]
+    whiten_bias = model.whiten.bias
+    fc_layer = model.head.weight
+    param_configs = [dict(params=norm_biases, lr=(lr*64), weight_decay=wd/(lr*64)),
+                     dict(params=[fc_layer], lr=(lr/81), weight_decay=wd/(lr/81))]
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     optimizer3 = torch.optim.SGD([whiten_bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
@@ -467,7 +466,7 @@ if __name__ == "__main__":
 
     # We re-use the compiled model between runs to save the non-data-dependent compilation time
     model = CifarNet().cuda().to(memory_format=torch.channels_last)
-    model = torch.compile(model, mode='max-autotune')
+    model.compile(mode='max-autotune')
 
     print_columns(logging_columns_list, is_head=True)
     main('warmup', model)
