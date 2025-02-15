@@ -2,6 +2,7 @@
 airbench94_muon.py
 Runs in 2.59 seconds on a 400W NVIDIA A100
 Attains 94.01 mean accuracy (n=200 trials)
+Descends from https://github.com/tysam-code/hlb-CIFAR10/blob/main/main.py
 """
 
 #############################################
