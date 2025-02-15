@@ -10,6 +10,8 @@ Attains 94.01 mean accuracy (n=200 trials)
 
 import os
 import sys
+with open(sys.argv[0]) as f:
+    code = f.read()
 import uuid
 from math import ceil
 
@@ -302,7 +304,7 @@ def print_columns(columns_list, is_head=False, is_final_entry=False):
     if is_head or is_final_entry:
         print('-'*len(print_string))
 
-logging_columns_list = ['run   ', 'epoch', 'train_acc', 'val_acc', 'tta_val_acc', 'total_time_seconds']
+logging_columns_list = ['run   ', 'epoch', 'train_acc', 'val_acc', 'tta_val_acc', 'time_seconds']
 def print_training_details(variables, is_final_entry):
     formatted = []
     for col in logging_columns_list:
@@ -406,14 +408,14 @@ def main(run, model):
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
     ender = torch.cuda.Event(enable_timing=True)
-    total_time_seconds = 0.0
+    time_seconds = 0.0
     def start_timer():
         starter.record()
     def stop_timer():
         ender.record()
         torch.cuda.synchronize()
-        nonlocal total_time_seconds
-        total_time_seconds += 1e-3 * starter.elapsed_time(ender)
+        nonlocal time_seconds
+        time_seconds += 1e-3 * starter.elapsed_time(ender)
 
     model.reset()
     current_steps = 0
@@ -426,16 +428,15 @@ def main(run, model):
 
     for epoch in range(ceil(epochs)):
 
-        # After training the whiten bias for some epochs, swap in the compiled model with frozen bias
-        if epoch == whiten_bias_epochs:
-            optimizers = optimizers[:2]
-            schedulers = schedulers[:2]
-
         ####################
         #     Training     #
         ####################
 
         start_timer()
+        # We only update the first layer's bias for the first few epochs
+        if epoch == whiten_bias_epochs:
+            optimizers = optimizers[:2]
+            schedulers = schedulers[:2]
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, nograd_whitenbias=(epoch >= whiten_bias_epochs))
@@ -473,8 +474,6 @@ def main(run, model):
     return tta_val_acc
 
 if __name__ == "__main__":
-    with open(sys.argv[0]) as f:
-        code = f.read()
 
     # We re-use the compiled model between runs to save the non-data-dependent compilation time
     model = CifarNet().cuda().to(memory_format=torch.channels_last)
@@ -485,10 +484,9 @@ if __name__ == "__main__":
     accs = torch.tensor([main(run, model) for run in range(200)])
     print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
 
-    log = {'code': code, 'accs': accs}
     log_dir = os.path.join('logs', str(uuid.uuid4()))
     os.makedirs(log_dir, exist_ok=True)
     log_path = os.path.join(log_dir, 'log.pt')
+    torch.save(dict(code=code, accs=accs), log_path)
     print(os.path.abspath(log_path))
-    torch.save(log, os.path.join(log_dir, 'log.pt'))
 
