@@ -381,7 +381,7 @@ def main(run, model):
     optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
     param_configs = [dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
-                     dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))]
+                     dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))] # head wants really small lr
     optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
     optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
     optimizers = [optimizer1, optimizer2, optimizer3]
@@ -389,7 +389,8 @@ def main(run, model):
         return 1 - step / total_train_steps
     def get_lr3(step):
         return 1 - step / (len(train_loader) * whiten_bias_epochs)
-    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr) for (opt, get_lr) in zip(optimizers, [get_lr12, get_lr12, get_lr3])]
+    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr)
+                  for (opt, get_lr) in zip(optimizers, [get_lr12, get_lr12, get_lr3])]
 
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
