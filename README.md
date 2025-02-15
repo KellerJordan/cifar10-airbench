@@ -1,30 +1,33 @@
 # CIFAR-10 Airbench 💨
 
-A collection of fast and self-contained training scripts for CIFAR-10.
+This repo contains the two fastest known algorithms for training a neural network to 94% and 96% accuracy on CIFAR-10 using a single NVIDIA A100 GPU.
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| `airbench94_compiled.py` | 94.01% | 3.09s | 0.36 |
-| `airbench94.py` | 94.01% | 3.83s | 0.36 |
-| `airbench95.py` | 95.01% | 10.4s | 1.4 |
-| `airbench96.py` | 96.03% | 34.7s | 4.9 |
-| `airbench94_muon.py` | 94.01% | 2.59s | 0.29 |
-| `airbench96_faster.py` | 96.00% | 27.3s | 3.1 |
+| [airbench94_muon.py](./airbench94_muon.py) | 94.01% | 2.59s | 0.29 |
+| [airbench96_faster.py](airbench96_faster.py) | 96.00% | 27.3s | 3.1 |
+
+Each of these record-holding scripts is fully self-contained and doesn't depend on anything else in the repo.
 
 For a comparison, the standard training used in most studies on CIFAR-10 is much slower:
 
 | Baseline | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| Standard ResNet-18 training | 96% | 7min | 32.3 |
-
-All timings are on a single NVIDIA A100 GPU.
-
-Note: `airbench96` has been improved since the paper from 46s to 35s. In addition, `airbench96_faster` is an improved (but more complicated) method which uses data filtering by a small proxy model.
-And `airbench94_muon` is an improved method using a variant of the [Muon optimizer](https://github.com/KellerJordan/modded-nanogpt?tab=readme-ov-file#proposed-optimizer).
+| Standard ResNet-18 training | 96.0% | 7min | 32.3 |
 
 ---
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
+
+In addition, [airbench94_muon.py](airbench94_muon.py) uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and [airbench96_faster.py](airbench96_faster.py) uses a form of data filtering. These are both new records since the paper.
+We have preserved the old records from the paper in this repo as well, which are as follows:
+
+| Script | Mean accuracy | Time | PFLOPs |
+| - | - | - | - |
+| [airbench94_compiled.py](airbench94_compiled.py) | 94.01% | 3.09s | 0.36 |
+| [airbench94.py](airbench94.py) | 94.01% | 3.83s | 0.36 |
+| [airbench95.py](airbench95.py) | 95.01% | 10.4s | 1.4 |
+| [airbench96.py](airbench96.py) | 96.03% | 34.7s | 4.9 |
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
@@ -52,7 +55,6 @@ Note: `airbench94_compiled.py` and `airbench94.py` are equivalent (i.e., yield t
 CIFAR-10 is one of the most widely used datasets in machine learning, facilitating [thousands of research projects per year](https://paperswithcode.com/dataset/cifar-10). 
 This repo provides fast and stable training baselines for CIFAR-10 in order to help accelerate this research.
 The trainings are provided as easily runnable dependency-free PyTorch scripts, and can replace classic baselines like training ResNet-20 or ResNet-18.
-
 
 ## Using the GPU-accelerated dataloader independently
 
