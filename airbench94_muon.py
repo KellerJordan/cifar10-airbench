@@ -364,10 +364,10 @@ def main(run, model):
     # larger the default steps will be than the underlying per-example gradients. We divide the
     # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
     # of the choice of momentum.
-    kilostep_scale = 1024 * (1 + 1 / (1 - momentum))
+    m_scale = (1 + 1 / (1 - momentum))
     batch_size = 2000
-    lr = 6.5 / kilostep_scale # un-decoupled learning rate for PyTorch SGD
-    wd = 0.015 * batch_size / kilostep_scale
+    lr = (6.5 / 1024) / m_scale # un-decoupled learning rate for PyTorch SGD
+    wd = (0.015 / 1024) * batch_size / m_scale
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
