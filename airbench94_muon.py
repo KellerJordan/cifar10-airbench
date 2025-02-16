@@ -386,9 +386,11 @@ def main(run, model):
     optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
     optimizers = [optimizer1, optimizer2, optimizer3]
     def get_lr12(step):
-        return 1 - step / total_train_steps
+        x = step / total_train_steps
+        return 1 - x
     def get_lr3(step):
-        return 1 - step / (len(train_loader) * whiten_bias_epochs)
+        x = step / (len(train_loader) * whiten_bias_epochs)
+        return 1 - x
     schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr)
                   for (opt, get_lr) in zip(optimizers, [get_lr12, get_lr12, get_lr3])]
 
