@@ -362,7 +362,7 @@ def main(run, model):
     param_configs = [dict(params=[model.whiten.bias], lr=lr, weight_decay=wd/lr),
                      dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
                      dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))] # head wants really small lr
-    optimizer1 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
+    optimizer1 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True, fused=True)
     optimizer2 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizers = [optimizer1, optimizer2]
     for opt in optimizers:
