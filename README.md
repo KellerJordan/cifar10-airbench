@@ -35,10 +35,10 @@ We have preserved the old records from the paper in this repo:
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
-| [airbench94_compiled.py](airbench94_compiled.py) | 94.01% | 3.09s | 0.36 |
-| [airbench94.py](airbench94.py) | 94.01% | 3.83s | 0.36 |
-| [airbench95.py](airbench95.py) | 95.01% | 10.4s | 1.4 |
-| [airbench96.py](airbench96.py) | 96.03% | 34.7s | 4.9 |
+| [airbench94_compiled.py](legacy/airbench94_compiled.py) | 94.01% | 3.09s | 0.36 |
+| [airbench94.py](legacy/airbench94.py) | 94.01% | 3.83s | 0.36 |
+| [airbench95.py](legacy/airbench95.py) | 95.01% | 10.4s | 1.4 |
+| [airbench96.py](legacy/airbench96.py) | 96.03% | 34.7s | 4.9 |
 
 ![alt](img/alternating_flip.png)
 ![curve](img/airbench94_intro.png)
