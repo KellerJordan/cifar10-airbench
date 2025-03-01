@@ -242,7 +242,7 @@ class CifarNet(nn.Module):
             if type(m) in (nn.Conv2d, Conv, BatchNorm, nn.Linear):
                 m.reset_parameters()
         w = self.head.weight.data
-        w *= (1 / w.size(-1)) / w.std()
+        w *= 1 / w.std()
 
     def init_whiten(self, train_images, eps=5e-4):
         c, (h, w) = train_images.shape[1], self.whiten.weight.shape[2:]
@@ -258,7 +258,7 @@ class CifarNet(nn.Module):
         x = F.conv2d(x, self.whiten.weight, b if whiten_bias_grad else b.detach())
         x = self.layers(x)
         x = x.view(len(x), -1)
-        return self.head(x)
+        return self.head(x) / x.size(-1)
 
 ############################################
 #                 Logging                  #
@@ -339,15 +339,10 @@ def evaluate(model, loader, tta_level=0):
 
 def main(run, model):
 
-    momentum = 0.85
-    # Assuming gradients are constant in time, for Nesterov momentum, the below ratio is how much
-    # larger the default steps will be than the underlying per-example gradients. We divide the
-    # learning rate by this ratio in order to ensure steps are the same scale as gradients, regardless
-    # of the choice of momentum.
-    m_scale = (1 + 1 / (1 - momentum))
     batch_size = 2000
-    lr = 0.406 / m_scale # un-decoupled learning rate for PyTorch SGD
-    wd = 1.5e-5 * batch_size / m_scale
+    bias_lr = 0.053
+    head_lr = 0.67
+    wd = 2e-6 * batch_size
 
     test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
     train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
@@ -360,10 +355,10 @@ def main(run, model):
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    param_configs = [dict(params=[model.whiten.bias], lr=lr, weight_decay=wd/lr),
-                     dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
-                     dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))] # head wants really small lr
-    optimizer1 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True, fused=True)
+    param_configs = [dict(params=[model.whiten.bias], lr=bias_lr, weight_decay=wd/bias_lr),
+                     dict(params=norm_biases, lr=bias_lr, weight_decay=wd/bias_lr),
+                     dict(params=[model.head.weight], lr=head_lr, weight_decay=wd/head_lr)]
+    optimizer1 = torch.optim.SGD(param_configs, momentum=0.85, nesterov=True, fused=True)
     optimizer2 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     optimizers = [optimizer1, optimizer2]
     for opt in optimizers:
