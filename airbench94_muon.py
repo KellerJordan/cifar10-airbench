@@ -253,8 +253,7 @@ class CifarNet(nn.Module):
         patches_flat = patches.view(len(patches), -1)
         est_patch_covariance = (patches_flat.T @ patches_flat) / len(patches_flat)
         eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO='U')
-        eigenvalues, eigenvectors = eigenvalues.flip(0).view(-1, 1, 1, 1), eigenvectors.T.reshape(c*h*w,c,h,w).flip(0)
-        eigenvectors_scaled = eigenvectors / torch.sqrt(eigenvalues + eps)
+        eigenvectors_scaled = eigenvectors.T.reshape(-1,c,h,w) / torch.sqrt(eigenvalues.view(-1,1,1,1) + eps)
         self.whiten.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
 
     def forward(self, x, nograd_whitenbias=False):
