@@ -407,10 +407,6 @@ def main(run, model):
         ####################
 
         start_timer()
-        # We only update the first layer's bias for the first few epochs
-        if epoch == whiten_bias_epochs:
-            optimizers = optimizers[:2]
-            schedulers = schedulers[:2]
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, nograd_whitenbias=(epoch >= whiten_bias_epochs))
