@@ -176,7 +176,7 @@ class CifarLoader:
             yield (images[idxs], self.labels[idxs])
 
 #############################################
-#            Network Components             #
+#            Network Definition             #
 #############################################
 
 # note the use of low BatchNorm stats momentum
@@ -214,10 +214,6 @@ class ConvGroup(nn.Module):
         x = self.norm2(x)
         x = self.activ(x)
         return x
-
-#############################################
-#            Network Definition             #
-#############################################
 
 class CifarNet(nn.Module):
     def __init__(self):
