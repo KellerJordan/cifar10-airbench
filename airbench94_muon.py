@@ -256,9 +256,9 @@ class CifarNet(nn.Module):
         eigenvectors_scaled = eigenvectors.T.reshape(-1,c,h,w) / torch.sqrt(eigenvalues.view(-1,1,1,1) + eps)
         self.whiten.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
 
-    def forward(self, x, nograd_whitenbias=False):
+    def forward(self, x, whiten_bias_grad=True):
         b = self.whiten.bias
-        x = F.conv2d(x, self.whiten.weight, b.detach() if nograd_whitenbias else b)
+        x = F.conv2d(x, self.whiten.weight, b if whiten_bias_grad else b.detach())
         x = self.layers(x)
         x = x.view(len(x), -1)
         return self.head(x)
@@ -342,8 +342,6 @@ def evaluate(model, loader, tta_level=0):
 
 def main(run, model):
 
-    epochs = 8
-    whiten_bias_epochs = 3
     momentum = 0.85
     # Assuming gradients are constant in time, for Nesterov momentum, the below ratio is how much
     # larger the default steps will be than the underlying per-example gradients. We divide the
@@ -359,25 +357,21 @@ def main(run, model):
     if run == 'warmup':
         # The only purpose of the first run is to warmup the compiled model, so we can use dummy data
         train_loader.labels = torch.randint(0, 10, size=(len(train_loader.labels),), device=train_loader.labels.device)
-    total_train_steps = ceil(len(train_loader) * epochs)
+    total_train_steps = ceil(8 * len(train_loader))
+    whiten_bias_train_steps = ceil(3 * len(train_loader))
 
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
-    optimizer1 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
     norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
-    param_configs = [dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
+    param_configs = [dict(params=[model.whiten.bias], lr=lr, weight_decay=wd/lr),
+                     dict(params=norm_biases, lr=lr, weight_decay=wd/lr),
                      dict(params=[model.head.weight], lr=(lr/5184), weight_decay=wd/(lr/5184))] # head wants really small lr
-    optimizer2 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
-    optimizer3 = torch.optim.SGD([model.whiten.bias], lr=lr, weight_decay=wd/lr, momentum=momentum, nesterov=True)
-    optimizers = [optimizer1, optimizer2, optimizer3]
-    def get_lr12(step):
-        x = step / total_train_steps
-        return 1 - x
-    def get_lr3(step):
-        x = step / (len(train_loader) * whiten_bias_epochs)
-        return 1 - x
-    schedulers = [torch.optim.lr_scheduler.LambdaLR(opt, get_lr)
-                  for (opt, get_lr) in zip(optimizers, [get_lr12, get_lr12, get_lr3])]
+    optimizer1 = torch.optim.SGD(param_configs, momentum=momentum, nesterov=True)
+    optimizer2 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
+    optimizers = [optimizer1, optimizer2]
+    for opt in optimizers:
+        for group in opt.param_groups:
+            group["initial_lr"] = group["lr"]
 
     # For accurately timing GPU code
     starter = torch.cuda.Event(enable_timing=True)
@@ -392,7 +386,7 @@ def main(run, model):
         time_seconds += 1e-3 * starter.elapsed_time(ender)
 
     model.reset()
-    current_steps = 0
+    step = 0
 
     # Initialize the whitening layer using training images
     start_timer()
@@ -400,7 +394,7 @@ def main(run, model):
     model.init_whiten(train_images)
     stop_timer()
 
-    for epoch in range(ceil(epochs)):
+    for epoch in range(ceil(total_train_steps / len(train_loader))):
 
         ####################
         #     Training     #
@@ -409,14 +403,17 @@ def main(run, model):
         start_timer()
         model.train()
         for inputs, labels in train_loader:
-            outputs = model(inputs, nograd_whitenbias=(epoch >= whiten_bias_epochs))
+            outputs = model(inputs, whiten_bias_grad=(step < whiten_bias_train_steps))
             F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction='sum').backward()
-            for opt, sched in zip(optimizers, schedulers):
+            for group in optimizer1.param_groups[:1]:
+                group["lr"] = group["initial_lr"] * (1 - step / whiten_bias_train_steps)
+            for group in optimizer1.param_groups[1:]+optimizer2.param_groups:
+                group["lr"] = group["initial_lr"] * (1 - step / total_train_steps)
+            for opt in optimizers:
                 opt.step()
-                sched.step()
             model.zero_grad(set_to_none=True)
-            current_steps += 1
-            if current_steps >= total_train_steps:
+            step += 1
+            if step >= total_train_steps:
                 break
         stop_timer()
 
