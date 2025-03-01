@@ -241,7 +241,8 @@ class CifarNet(nn.Module):
         for m in model.modules():
             if type(m) in (nn.Conv2d, Conv, BatchNorm, nn.Linear):
                 m.reset_parameters()
-        self.head.weight.data *= 1/9
+        w = self.head.weight.data
+        w *= (1 / w.size(-1)) / w.std()
 
     def init_whiten(self, train_images, eps=5e-4):
         c, (h, w) = train_images.shape[1], self.whiten.weight.shape[2:]
