@@ -216,27 +216,6 @@ class ConvGroup(nn.Module):
         return x
 
 #############################################
-#       Whitening Conv Initialization       #
-#############################################
-
-def get_patches(x, patch_shape):
-    c, (h, w) = x.shape[1], patch_shape
-    return x.unfold(2,h,1).unfold(3,w,1).transpose(1,3).reshape(-1,c,h,w).float()
-
-def get_whitening_parameters(patches):
-    n,c,h,w = patches.shape
-    patches_flat = patches.view(n, -1)
-    est_patch_covariance = (patches_flat.T @ patches_flat) / n
-    eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO='U')
-    return eigenvalues.flip(0).view(-1, 1, 1, 1), eigenvectors.T.reshape(c*h*w,c,h,w).flip(0)
-
-def init_whitening_conv(layer, train_set, eps=5e-4):
-    patches = get_patches(train_set, patch_shape=layer.weight.data.shape[2:])
-    eigenvalues, eigenvectors = get_whitening_parameters(patches)
-    eigenvectors_scaled = eigenvectors / torch.sqrt(eigenvalues + eps)
-    layer.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
-
-#############################################
 #            Network Definition             #
 #############################################
 
@@ -268,8 +247,12 @@ class CifarNet(nn.Module):
                 m.reset_parameters()
         self.head.weight.data *= 1/9
 
-    def init_whiten(self, train_images):
-        init_whitening_conv(self.whiten, train_images)
+    def init_whiten(self, train_images, eps=5e-4):
+        c, (h, w) = train_images.shape[1], self.whiten.weight.shape[2:]
+        patches = train_images.unfold(2,h,1).unfold(3,w,1).transpose(1,3).reshape(-1,c,h,w).float()
+        eigenvalues, eigenvectors = get_whitening_parameters(patches)
+        eigenvectors_scaled = eigenvectors / torch.sqrt(eigenvalues + eps)
+        self.whiten.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
 
     def forward(self, x, nograd_whitenbias=False):
         b = self.whiten.bias
@@ -277,6 +260,13 @@ class CifarNet(nn.Module):
         x = self.layers(x)
         x = x.view(len(x), -1)
         return self.head(x)
+
+def get_whitening_parameters(patches):
+    n,c,h,w = patches.shape
+    patches_flat = patches.view(n, -1)
+    est_patch_covariance = (patches_flat.T @ patches_flat) / n
+    eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO='U')
+    return eigenvalues.flip(0).view(-1, 1, 1, 1), eigenvectors.T.reshape(c*h*w,c,h,w).flip(0)
 
 ############################################
 #                 Logging                  #
