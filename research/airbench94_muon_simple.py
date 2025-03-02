@@ -123,7 +123,7 @@ class CifarNet(nn.Module):
                 mod.half()
 
     def reset(self):
-        for m in model.modules():
+        for m in self.modules():
             if type(m) in (nn.Conv2d, Conv, BatchNorm, nn.Linear):
                 m.reset_parameters()
         w = self.head.weight.data
