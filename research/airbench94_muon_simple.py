@@ -10,15 +10,6 @@ torch.backends.cudnn.benchmark = True
 
 @torch.compile
 def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
-    """
-    Newton-Schulz iteration to compute the zeroth power / orthogonalization of G. We opt to use a
-    quintic iteration whose coefficients are selected to maximize the slope at zero. For the purpose
-    of minimizing steps, it turns out to be empirically effective to keep increasing the slope at
-    zero even beyond the point where the iteration no longer converges all the way to one everywhere
-    on the interval. This iteration therefore does not produce UV^T but rather something like US'V^T
-    where S' is diagonal with S_{ii}' \sim Uniform(0.5, 1.5), which turns out not to hurt model
-    performance at all relative to UV^T, where USV^T = G is the SVD.
-    """
     assert len(G.shape) == 2
     a, b, c = (3.4445, -4.7750,  2.0315)
     X = G.bfloat16()
@@ -46,19 +37,19 @@ class Muon(torch.optim.Optimizer):
 
     def step(self):
         for group in self.param_groups:
-            lr = group['lr']
-            momentum = group['momentum']
-            for p in group['params']:
+            lr = group["lr"]
+            momentum = group["momentum"]
+            for p in group["params"]:
                 g = p.grad
                 if g is None:
                     continue
                 state = self.state[p]
 
-                if 'momentum_buffer' not in state.keys():
-                    state['momentum_buffer'] = torch.zeros_like(g)
-                buf = state['momentum_buffer']
+                if "momentum_buffer" not in state.keys():
+                    state["momentum_buffer"] = torch.zeros_like(g)
+                buf = state["momentum_buffer"]
                 buf.mul_(momentum).add_(g)
-                g = g.add(buf, alpha=momentum) if group['nesterov'] else buf
+                g = g.add(buf, alpha=momentum) if group["nesterov"] else buf
 
                 p.data.mul_(len(p.data)**0.5 / p.data.norm()) # normalize the weight
                 update = zeropower_via_newtonschulz5(g.reshape(len(g), -1)).view(g.shape) # whiten the update
@@ -73,7 +64,7 @@ class BatchNorm(nn.BatchNorm2d):
 
 class Conv(nn.Conv2d):
     def __init__(self, in_channels, out_channels):
-        super().__init__(in_channels, out_channels, kernel_size=3, padding='same', bias=False)
+        super().__init__(in_channels, out_channels, kernel_size=3, padding="same", bias=False)
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -110,12 +101,12 @@ class CifarNet(nn.Module):
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
             nn.GELU(),
-            ConvGroup(whiten_width,     widths['block1']),
-            ConvGroup(widths['block1'], widths['block2']),
-            ConvGroup(widths['block2'], widths['block3']),
+            ConvGroup(whiten_width,     widths["block1"]),
+            ConvGroup(widths["block1"], widths["block2"]),
+            ConvGroup(widths["block2"], widths["block3"]),
             nn.MaxPool2d(3),
         )
-        self.head = nn.Linear(widths['block3'], 10, bias=False)
+        self.head = nn.Linear(widths["block3"], 10, bias=False)
         for mod in self.modules():
             if isinstance(mod, BatchNorm):
                 mod.float()
@@ -134,7 +125,7 @@ class CifarNet(nn.Module):
         patches = train_images.unfold(2,h,1).unfold(3,w,1).transpose(1,3).reshape(-1,c,h,w).float()
         patches_flat = patches.view(len(patches), -1)
         est_patch_covariance = (patches_flat.T @ patches_flat) / len(patches_flat)
-        eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO='U')
+        eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO="U")
         eigenvectors_scaled = eigenvectors.T.reshape(-1,c,h,w) / torch.sqrt(eigenvalues.view(-1,1,1,1) + eps)
         self.whiten.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
 
@@ -154,14 +145,14 @@ def main():
     head_lr = 0.67
     wd = 2e-6 * batch_size
 
-    test_loader = airbench.CifarLoader('cifar10', train=False, batch_size=2000)
-    train_loader = airbench.CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
+    test_loader = airbench.CifarLoader("cifar10", train=False, batch_size=2000)
+    train_loader = airbench.CifarLoader("cifar10", train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
     total_train_steps = ceil(8 * len(train_loader))
     whiten_bias_train_steps = ceil(3 * len(train_loader))
 
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
-    norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
+    norm_biases = [p for n, p in model.named_parameters() if "norm" in n and p.requires_grad]
     param_configs = [dict(params=[model.whiten.bias], lr=bias_lr, weight_decay=wd/bias_lr),
                      dict(params=norm_biases, lr=bias_lr, weight_decay=wd/bias_lr),
                      dict(params=[model.head.weight], lr=head_lr, weight_decay=wd/head_lr)]
@@ -184,7 +175,7 @@ def main():
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, whiten_bias_grad=(step < whiten_bias_train_steps))
-            F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction='sum').backward()
+            F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction="sum").backward()
             for group in optimizer1.param_groups[:1]:
                 group["lr"] = group["initial_lr"] * (1 - step / whiten_bias_train_steps)
             for group in optimizer1.param_groups[1:]+optimizer2.param_groups:
@@ -202,5 +193,5 @@ def main():
 
 if __name__ == "__main__":
     accs = torch.tensor([main() for run in range(25)])
-    print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
+    print("Mean: %.4f    Std: %.4f" % (accs.mean(), accs.std()))
 
