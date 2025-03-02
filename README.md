@@ -1,6 +1,6 @@
 # CIFAR-10 Airbench 💨
 
-This repo contains the two fastest known algorithms for training a neural network to 94% and 96% accuracy on CIFAR-10 using a single NVIDIA A100 GPU.
+This repo contains the two fastest known algorithms for training a neural network to 94% or 96% accuracy on CIFAR-10 using a single NVIDIA A100 GPU.
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
@@ -26,12 +26,15 @@ python airbench94_muon.py
 
 (requires `torch` and `torchvision` to be installed)
 
+---
+---
+
 ## Methods
 
 The set of methods used to obtain these training speeds are described in [the paper](https://arxiv.org/abs/2404.00498).
 
 In addition, [airbench94_muon.py](airbench94_muon.py) uses the [Muon optimizer](https://kellerjordan.github.io/posts/muon/) and [airbench96_faster.py](airbench96_faster.py) uses a form of data filtering. These are both new records since the paper.
-We have preserved the old records from the paper as well, in the `legacy` folder:
+We have preserved the paper's old records as well in the `legacy` folder:
 
 | Script | Mean accuracy | Time | PFLOPs |
 | - | - | - | - |
