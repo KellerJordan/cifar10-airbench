@@ -146,7 +146,8 @@ def main():
     wd = 2e-6 * batch_size
 
     test_loader = airbench.CifarLoader("cifar10", train=False, batch_size=2000)
-    train_loader = airbench.CifarLoader("cifar10", train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
+    train_loader = airbench.CifarLoader("cifar10", train=True, batch_size=batch_size,
+                                        aug=dict(flip=True, translate=2), altflip=True)
     total_train_steps = ceil(8 * len(train_loader))
     whiten_bias_train_steps = ceil(3 * len(train_loader))
 
@@ -154,7 +155,7 @@ def main():
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
     norm_biases = [p for n, p in model.named_parameters() if "norm" in n and p.requires_grad]
     param_configs = [dict(params=[model.whiten.bias], lr=bias_lr, weight_decay=wd/bias_lr),
-                     dict(params=norm_biases, lr=bias_lr, weight_decay=wd/bias_lr),
+                     dict(params=norm_biases,         lr=bias_lr, weight_decay=wd/bias_lr),
                      dict(params=[model.head.weight], lr=head_lr, weight_decay=wd/head_lr)]
     optimizer1 = torch.optim.SGD(param_configs, momentum=0.85, nesterov=True, fused=True)
     optimizer2 = Muon(filter_params, lr=0.24, momentum=0.6, nesterov=True)
