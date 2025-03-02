@@ -66,19 +66,19 @@ class Muon(torch.optim.Optimizer):
 
     def step(self):
         for group in self.param_groups:
-            lr = group['lr']
-            momentum = group['momentum']
-            for p in group['params']:
+            lr = group["lr"]
+            momentum = group["momentum"]
+            for p in group["params"]:
                 g = p.grad
                 if g is None:
                     continue
                 state = self.state[p]
 
-                if 'momentum_buffer' not in state.keys():
-                    state['momentum_buffer'] = torch.zeros_like(g)
-                buf = state['momentum_buffer']
+                if "momentum_buffer" not in state.keys():
+                    state["momentum_buffer"] = torch.zeros_like(g)
+                buf = state["momentum_buffer"]
                 buf.mul_(momentum).add_(g)
-                g = g.add(buf, alpha=momentum) if group['nesterov'] else buf
+                g = g.add(buf, alpha=momentum) if group["nesterov"] else buf
 
                 p.data.mul_(len(p.data)**0.5 / p.data.norm()) # normalize the weight
                 update = zeropower_via_newtonschulz5(g.reshape(len(g), -1)).view(g.shape) # whiten the update
@@ -118,15 +118,15 @@ def batch_crop(images, crop_size):
 class CifarLoader:
 
     def __init__(self, path, train=True, batch_size=500, aug=None):
-        data_path = os.path.join(path, 'train.pt' if train else 'test.pt')
+        data_path = os.path.join(path, "train.pt" if train else "test.pt")
         if not os.path.exists(data_path):
             dset = torchvision.datasets.CIFAR10(path, download=True, train=train)
             images = torch.tensor(dset.data)
             labels = torch.tensor(dset.targets)
-            torch.save({'images': images, 'labels': labels, 'classes': dset.classes}, data_path)
+            torch.save({"images": images, "labels": labels, "classes": dset.classes}, data_path)
 
-        data = torch.load(data_path, map_location=torch.device('cuda'))
-        self.images, self.labels, self.classes = data['images'], data['labels'], data['classes']
+        data = torch.load(data_path, map_location=torch.device("cuda"))
+        self.images, self.labels, self.classes = data["images"], data["labels"], data["classes"]
         # It's faster to load+process uint8 data than to load preprocessed fp16 data
         self.images = (self.images.half() / 255).permute(0, 3, 1, 2).to(memory_format=torch.channels_last)
 
@@ -136,7 +136,7 @@ class CifarLoader:
 
         self.aug = aug or {}
         for k in self.aug.keys():
-            assert k in ['flip', 'translate'], 'Unrecognized key: %s' % k
+            assert k in ["flip", "translate"], "Unrecognized key: %s" % k
 
         self.batch_size = batch_size
         self.drop_last = train
@@ -148,23 +148,23 @@ class CifarLoader:
     def __iter__(self):
 
         if self.epoch == 0:
-            images = self.proc_images['norm'] = self.normalize(self.images)
+            images = self.proc_images["norm"] = self.normalize(self.images)
             # Pre-flip images in order to do every-other epoch flipping scheme
-            if self.aug.get('flip', False):
-                images = self.proc_images['flip'] = batch_flip_lr(images)
+            if self.aug.get("flip", False):
+                images = self.proc_images["flip"] = batch_flip_lr(images)
             # Pre-pad images to save time when doing random translation
-            pad = self.aug.get('translate', 0)
+            pad = self.aug.get("translate", 0)
             if pad > 0:
-                self.proc_images['pad'] = F.pad(images, (pad,)*4, 'reflect')
+                self.proc_images["pad"] = F.pad(images, (pad,)*4, "reflect")
 
-        if self.aug.get('translate', 0) > 0:
-            images = batch_crop(self.proc_images['pad'], self.images.shape[-2])
-        elif self.aug.get('flip', False):
-            images = self.proc_images['flip']
+        if self.aug.get("translate", 0) > 0:
+            images = batch_crop(self.proc_images["pad"], self.images.shape[-2])
+        elif self.aug.get("flip", False):
+            images = self.proc_images["flip"]
         else:
-            images = self.proc_images['norm']
+            images = self.proc_images["norm"]
         # Flip all images together every other epoch. This increases diversity relative to random flipping
-        if self.aug.get('flip', False):
+        if self.aug.get("flip", False):
             if self.epoch % 2 == 1:
                 images = images.flip(-1)
 
@@ -188,7 +188,7 @@ class BatchNorm(nn.BatchNorm2d):
 
 class Conv(nn.Conv2d):
     def __init__(self, in_channels, out_channels):
-        super().__init__(in_channels, out_channels, kernel_size=3, padding='same', bias=False)
+        super().__init__(in_channels, out_channels, kernel_size=3, padding="same", bias=False)
 
     def reset_parameters(self):
         super().reset_parameters()
@@ -225,12 +225,12 @@ class CifarNet(nn.Module):
         self.whiten.weight.requires_grad = False
         self.layers = nn.Sequential(
             nn.GELU(),
-            ConvGroup(whiten_width,     widths['block1']),
-            ConvGroup(widths['block1'], widths['block2']),
-            ConvGroup(widths['block2'], widths['block3']),
+            ConvGroup(whiten_width,     widths["block1"]),
+            ConvGroup(widths["block1"], widths["block2"]),
+            ConvGroup(widths["block2"], widths["block3"]),
             nn.MaxPool2d(3),
         )
-        self.head = nn.Linear(widths['block3'], 10, bias=False)
+        self.head = nn.Linear(widths["block3"], 10, bias=False)
         for mod in self.modules():
             if isinstance(mod, BatchNorm):
                 mod.float()
@@ -249,7 +249,7 @@ class CifarNet(nn.Module):
         patches = train_images.unfold(2,h,1).unfold(3,w,1).transpose(1,3).reshape(-1,c,h,w).float()
         patches_flat = patches.view(len(patches), -1)
         est_patch_covariance = (patches_flat.T @ patches_flat) / len(patches_flat)
-        eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO='U')
+        eigenvalues, eigenvectors = torch.linalg.eigh(est_patch_covariance, UPLO="U")
         eigenvectors_scaled = eigenvectors.T.reshape(-1,c,h,w) / torch.sqrt(eigenvalues.view(-1,1,1,1) + eps)
         self.whiten.weight.data[:] = torch.cat((eigenvectors_scaled, -eigenvectors_scaled))
 
@@ -265,17 +265,17 @@ class CifarNet(nn.Module):
 ############################################
 
 def print_columns(columns_list, is_head=False, is_final_entry=False):
-    print_string = ''
+    print_string = ""
     for col in columns_list:
-        print_string += '|  %s  ' % col
-    print_string += '|'
+        print_string += "|  %s  " % col
+    print_string += "|"
     if is_head:
-        print('-'*len(print_string))
+        print("-"*len(print_string))
     print(print_string)
     if is_head or is_final_entry:
-        print('-'*len(print_string))
+        print("-"*len(print_string))
 
-logging_columns_list = ['run   ', 'epoch', 'train_acc', 'val_acc', 'tta_val_acc', 'time_seconds']
+logging_columns_list = ["run   ", "epoch", "train_acc", "val_acc", "tta_val_acc", "time_seconds"]
 def print_training_details(variables, is_final_entry):
     formatted = []
     for col in logging_columns_list:
@@ -283,10 +283,10 @@ def print_training_details(variables, is_final_entry):
         if type(var) in (int, str):
             res = str(var)
         elif type(var) is float:
-            res = '{:0.4f}'.format(var)
+            res = "{:0.4f}".format(var)
         else:
             assert var is None
-            res = ''
+            res = ""
         formatted.append(res.rjust(len(col)))
     print_columns(formatted, is_final_entry=is_final_entry)
 
@@ -313,7 +313,7 @@ def infer(model, loader, tta_level=0):
     def infer_mirror_translate(inputs, net):
         logits = infer_mirror(inputs, net)
         pad = 1
-        padded_inputs = F.pad(inputs, (pad,)*4, 'reflect')
+        padded_inputs = F.pad(inputs, (pad,)*4, "reflect")
         inputs_translate_list = [
             padded_inputs[:, :, 0:32, 0:32],
             padded_inputs[:, :, 2:34, 2:34],
@@ -344,9 +344,9 @@ def main(run, model):
     head_lr = 0.67
     wd = 2e-6 * batch_size
 
-    test_loader = CifarLoader('cifar10', train=False, batch_size=2000)
-    train_loader = CifarLoader('cifar10', train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
-    if run == 'warmup':
+    test_loader = CifarLoader("cifar10", train=False, batch_size=2000)
+    train_loader = CifarLoader("cifar10", train=True, batch_size=batch_size, aug=dict(flip=True, translate=2))
+    if run == "warmup":
         # The only purpose of the first run is to warmup the compiled model, so we can use dummy data
         train_loader.labels = torch.randint(0, 10, size=(len(train_loader.labels),), device=train_loader.labels.device)
     total_train_steps = ceil(8 * len(train_loader))
@@ -354,7 +354,7 @@ def main(run, model):
 
     # Create optimizers and learning rate schedulers
     filter_params = [p for p in model.parameters() if len(p.shape) == 4 and p.requires_grad]
-    norm_biases = [p for n, p in model.named_parameters() if 'norm' in n and p.requires_grad]
+    norm_biases = [p for n, p in model.named_parameters() if "norm" in n and p.requires_grad]
     param_configs = [dict(params=[model.whiten.bias], lr=bias_lr, weight_decay=wd/bias_lr),
                      dict(params=norm_biases, lr=bias_lr, weight_decay=wd/bias_lr),
                      dict(params=[model.head.weight], lr=head_lr, weight_decay=wd/head_lr)]
@@ -396,7 +396,7 @@ def main(run, model):
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, whiten_bias_grad=(step < whiten_bias_train_steps))
-            F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction='sum').backward()
+            F.cross_entropy(outputs, labels, label_smoothing=0.2, reduction="sum").backward()
             for group in optimizer1.param_groups[:1]:
                 group["lr"] = group["initial_lr"] * (1 - step / whiten_bias_train_steps)
             for group in optimizer1.param_groups[1:]+optimizer2.param_groups:
@@ -426,7 +426,7 @@ def main(run, model):
     start_timer()
     tta_val_acc = evaluate(model, test_loader, tta_level=2)
     stop_timer()
-    epoch = 'eval'
+    epoch = "eval"
     print_training_details(locals(), is_final_entry=True)
 
     return tta_val_acc
@@ -435,16 +435,16 @@ if __name__ == "__main__":
 
     # We re-use the compiled model between runs to save the non-data-dependent compilation time
     model = CifarNet().cuda().to(memory_format=torch.channels_last)
-    model.compile(mode='max-autotune')
+    model.compile(mode="max-autotune")
 
     print_columns(logging_columns_list, is_head=True)
-    main('warmup', model)
+    main("warmup", model)
     accs = torch.tensor([main(run, model) for run in range(200)])
-    print('Mean: %.4f    Std: %.4f' % (accs.mean(), accs.std()))
+    print("Mean: %.4f    Std: %.4f" % (accs.mean(), accs.std()))
 
-    log_dir = os.path.join('logs', str(uuid.uuid4()))
+    log_dir = os.path.join("logs", str(uuid.uuid4()))
     os.makedirs(log_dir, exist_ok=True)
-    log_path = os.path.join(log_dir, 'log.pt')
+    log_path = os.path.join(log_dir, "log.pt")
     torch.save(dict(code=code, accs=accs), log_path)
     print(os.path.abspath(log_path))
 
