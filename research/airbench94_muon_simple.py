@@ -197,7 +197,7 @@ def main():
                 break
 
     tta_val_acc = airbench.evaluate(model, test_loader, tta_level=2)
-    print(tta_val_acc)
+    print(f"{tta_val_acc:.4f}")
     return tta_val_acc
 
 if __name__ == "__main__":
