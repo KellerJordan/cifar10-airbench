@@ -1,12 +1,9 @@
 from math import ceil
-
 import torch
+torch.backends.cudnn.benchmark = True
 from torch import nn
 import torch.nn.functional as F
-
 import airbench
-
-torch.backends.cudnn.benchmark = True
 
 @torch.compile
 def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
@@ -26,12 +23,6 @@ def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
 
 class Muon(torch.optim.Optimizer):
     def __init__(self, params, lr=1e-3, momentum=0, nesterov=False):
-        if lr < 0.0:
-            raise ValueError(f"Invalid learning rate: {lr}")
-        if momentum < 0.0:
-            raise ValueError(f"Invalid momentum value: {momentum}")
-        if nesterov and momentum <= 0:
-            raise ValueError("Nesterov momentum requires a momentum")
         defaults = dict(lr=lr, momentum=momentum, nesterov=nesterov)
         super().__init__(params, defaults)
 
