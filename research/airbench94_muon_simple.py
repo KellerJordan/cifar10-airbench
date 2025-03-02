@@ -1,7 +1,3 @@
-#############################################
-#                  Setup                    #
-#############################################
-
 from math import ceil
 
 import torch
@@ -11,10 +7,6 @@ import torch.nn.functional as F
 import airbench
 
 torch.backends.cudnn.benchmark = True
-
-#############################################
-#               Muon optimizer              #
-#############################################
 
 @torch.compile
 def zeropower_via_newtonschulz5(G, steps=3, eps=1e-7):
@@ -71,10 +63,6 @@ class Muon(torch.optim.Optimizer):
                 p.data.mul_(len(p.data)**0.5 / p.data.norm()) # normalize the weight
                 update = zeropower_via_newtonschulz5(g.reshape(len(g), -1)).view(g.shape) # whiten the update
                 p.data.add_(update, alpha=-lr) # take a step
-
-#############################################
-#            Network Definition             #
-#############################################
 
 # note the use of low BatchNorm stats momentum
 class BatchNorm(nn.BatchNorm2d):
@@ -157,10 +145,6 @@ class CifarNet(nn.Module):
         x = x.view(len(x), -1)
         return self.head(x) / x.size(-1)
 
-############################################
-#                Training                  #
-############################################
-
 def main():
 
     model = CifarNet().cuda().to(memory_format=torch.channels_last)
@@ -197,10 +181,6 @@ def main():
 
     for epoch in range(ceil(total_train_steps / len(train_loader))):
 
-        ####################
-        #     Training     #
-        ####################
-
         model.train()
         for inputs, labels in train_loader:
             outputs = model(inputs, whiten_bias_grad=(step < whiten_bias_train_steps))
@@ -215,10 +195,6 @@ def main():
             step += 1
             if step >= total_train_steps:
                 break
-
-    ####################
-    #  TTA Evaluation  #
-    ####################
 
     tta_val_acc = airbench.evaluate(model, test_loader, tta_level=2)
     print(tta_val_acc)
